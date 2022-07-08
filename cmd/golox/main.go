@@ -83,8 +83,7 @@ func (l *Lox) run(line string) {
 	scanner := scanner.NewScanner(line, l)
 	for _, token := range scanner.ScanTokens() {
 		// TODO
-		_ = token
-		//fmt.Println(token)
+		fmt.Printf("line: %d, token: %s\n", token.Line, token.String())
 	}
 }
 

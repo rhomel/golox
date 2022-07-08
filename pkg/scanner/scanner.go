@@ -163,6 +163,8 @@ func (s *Scanner) scanToken() {
 		// ignore
 	case '\n':
 		s.line++
+	case '"':
+		s.string()
 	default:
 		s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
 	}
@@ -196,7 +198,7 @@ func (s *Scanner) advance() rune {
 	return s.source[current]
 }
 
-// match peaks at the next character and returns false if it doesn't match or
+// match peeks at the next character and returns false if it doesn't match or
 // is at the end of input. If the character matches the exepcted character, the
 // character is consumed and match returns true.
 func (s *Scanner) match(expected rune) bool {
@@ -219,4 +221,25 @@ func (s *Scanner) peek() rune {
 
 func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
+}
+
+func (s *Scanner) string() {
+	for s.peek() != '"' && !s.isAtEnd() {
+		if s.peek() == '\n' {
+			s.line++
+		}
+		s.advance()
+	}
+
+	if s.isAtEnd() {
+		s.reporter.Error(s.line, "Unterminated string.")
+		return
+	}
+
+	// consume closing '"'
+	s.advance()
+
+	// ignore surrounding quotes
+	value := string(s.source[s.start+1 : s.current-1])
+	s.addTokenLiteral(STRING, value)
 }

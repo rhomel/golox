@@ -1,0 +1,8 @@
+// parse a literal string
+
+"abc def"
+
+"multi
+line
+string"
+
