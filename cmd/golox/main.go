@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 )
 
 const (
+	ExitCodeOK         = 0
 	ExitCodeUsageError = 1
 	ExitIOError        = 100
 )
@@ -49,9 +53,21 @@ func runFile(file string) {
 }
 
 func runPrompt() {
-	// TODO
-	fmt.Println("TODO")
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("> ")
+		line, err := reader.ReadString('\n')
+		if errors.Is(err, io.EOF) {
+			exitf(ExitCodeOK, "// #quit")
+		}
+		if err != nil {
+			exitf(ExitIOError, "error reading from stdin: %v", err)
+		}
+		run(line)
+	}
 }
 
 func run(line string) {
+	// TODO
+	fmt.Print(line)
 }
