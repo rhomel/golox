@@ -146,6 +146,15 @@ func (s *Scanner) scanToken() {
 		} else {
 			s.addToken(GREATER)
 		}
+	case '/':
+		if s.match('/') {
+			// consume remaining comment line
+			for s.peek() != '\n' && !s.isAtEnd() {
+				s.advance()
+			}
+		} else {
+			s.addToken(SLASH)
+		}
 	case '\n':
 		// TODO: ignoring newlines for now so we can test with actual input
 	default:
@@ -193,6 +202,13 @@ func (s *Scanner) match(expected rune) bool {
 	}
 	s.current++
 	return true
+}
+
+func (s *Scanner) peek() rune {
+	if s.isAtEnd() {
+		return 0
+	}
+	return s.source[s.current]
 }
 
 func (s *Scanner) isAtEnd() bool {
