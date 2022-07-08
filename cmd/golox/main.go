@@ -24,15 +24,16 @@ func exitf(code int, format string, args ...interface{}) {
 }
 
 func main() {
+	lox := &Lox{}
 	args := &Args{}
 	l := args.len()
 	switch {
 	case l > 1:
 		exitf(ExitCodeUsageError, "usage: golox [file]")
 	case l == 1:
-		runFile(args.get()[0])
+		lox.runFile(args.get()[0])
 	default:
-		runPrompt()
+		lox.runPrompt()
 	}
 }
 
@@ -46,15 +47,17 @@ func (a *Args) get() []string {
 	return os.Args[1:]
 }
 
-func runFile(file string) {
+type Lox struct{}
+
+func (l *Lox) runFile(file string) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		exitf(ExitIOError, "error reading file '%s': %v", file, err)
 	}
-	run(string(b))
+	l.run(string(b))
 }
 
-func runPrompt() {
+func (l *Lox) runPrompt() {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
@@ -65,11 +68,11 @@ func runPrompt() {
 		if err != nil {
 			exitf(ExitIOError, "error reading from stdin: %v", err)
 		}
-		run(line)
+		l.run(line)
 	}
 }
 
-func run(line string) {
+func (l *Lox) run(line string) {
 	scanner := scanner.NewScanner(line)
 	for token := range scanner.ScanTokens() {
 		// TODO
