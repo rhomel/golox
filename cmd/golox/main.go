@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+
+	"rhomel.com/crafting-interpreters-go/pkg/scanner"
 )
 
 const (
@@ -68,6 +70,9 @@ func runPrompt() {
 }
 
 func run(line string) {
-	// TODO
-	fmt.Print(line)
+	scanner := scanner.NewScanner(line)
+	for token := range scanner.ScanTokens() {
+		// TODO
+		fmt.Println(token)
+	}
 }
