@@ -122,6 +122,32 @@ func (s *Scanner) scanToken() {
 		s.addToken(SEMICOLON)
 	case '*':
 		s.addToken(STAR)
+	case '!':
+		if s.match('=') {
+			s.addToken(BANG_EQUAL)
+		} else {
+			s.addToken(BANG)
+		}
+	case '=':
+		if s.match('=') {
+			s.addToken(EQUAL_EQUAL)
+		} else {
+			s.addToken(EQUAL)
+		}
+	case '<':
+		if s.match('=') {
+			s.addToken(LESS_EQUAL)
+		} else {
+			s.addToken(LESS)
+		}
+	case '>':
+		if s.match('=') {
+			s.addToken(GREATER_EQUAL)
+		} else {
+			s.addToken(GREATER)
+		}
+	case '\n':
+		// TODO: ignoring newlines for now so we can test with actual input
 	default:
 		s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
 	}
@@ -153,6 +179,20 @@ func (s *Scanner) advance() rune {
 	current := s.current
 	s.current++
 	return s.source[current]
+}
+
+// match peaks at the next character and returns false if it doesn't match or
+// is at the end of input. If the character matches the exepcted character, the
+// character is consumed and match returns true.
+func (s *Scanner) match(expected rune) bool {
+	if s.isAtEnd() {
+		return false
+	}
+	if s.source[s.current] != expected {
+		return false
+	}
+	s.current++
+	return true
 }
 
 func (s *Scanner) isAtEnd() bool {
