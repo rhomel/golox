@@ -1,6 +1,9 @@
 package scanner
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type TokenType string
 
@@ -166,7 +169,11 @@ func (s *Scanner) scanToken() {
 	case '"':
 		s.string()
 	default:
-		s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
+		if s.isDigit(c) {
+			s.number()
+		} else {
+			s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
+		}
 	}
 }
 
@@ -219,6 +226,14 @@ func (s *Scanner) peek() rune {
 	return s.source[s.current]
 }
 
+func (s *Scanner) peekNext() rune {
+	next := s.current + 1
+	if next >= len(s.source) {
+		return 0
+	}
+	return s.source[next]
+}
+
 func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
@@ -242,4 +257,33 @@ func (s *Scanner) string() {
 	// ignore surrounding quotes
 	value := string(s.source[s.start+1 : s.current-1])
 	s.addTokenLiteral(STRING, value)
+}
+
+func (s *Scanner) number() {
+	// scan digits
+	for s.isDigit(s.peek()) {
+		s.advance()
+	}
+
+	// floating point
+	if s.peek() == '.' && s.isDigit(s.peekNext()) {
+		// consume '.'
+		s.advance()
+
+		// scan remaining digits
+		for s.isDigit(s.peek()) {
+			s.advance()
+		}
+	}
+
+	svalue := string(s.source[s.start:s.current])
+	value, err := strconv.ParseFloat(svalue, 64)
+	if err != nil {
+		s.reporter.Error(s.line, fmt.Sprintf("Unsupported number '%s': %v", svalue, err))
+	}
+	s.addTokenLiteral(NUMBER, value)
+}
+
+func (s *Scanner) isDigit(c rune) bool {
+	return c >= '0' && c <= '9'
 }
