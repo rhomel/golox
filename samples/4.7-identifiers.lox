@@ -1,0 +1,8 @@
+// scan identifiers and keywords
+
+if alice >= bob {
+	wow
+} else {
+	oh ok
+}
+

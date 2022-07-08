@@ -57,6 +57,25 @@ const (
 	EOF TokenType = "EOF"
 )
 
+var keywords = map[string]TokenType{
+	"and":    AND,
+	"class":  CLASS,
+	"else":   ELSE,
+	"false":  FALSE,
+	"for":    FOR,
+	"fun":    FUN,
+	"if":     IF,
+	"nil":    NIL,
+	"or":     OR,
+	"print":  PRINT,
+	"return": RETURN,
+	"super":  SUPER,
+	"this":   THIS,
+	"true":   TRUE,
+	"var":    VAR,
+	"while":  WHILE,
+}
+
 type Token struct {
 	Typ     TokenType
 	Lexeme  string
@@ -171,6 +190,8 @@ func (s *Scanner) scanToken() {
 	default:
 		if s.isDigit(c) {
 			s.number()
+		} else if s.isAlpha(c) {
+			s.identifier()
 		} else {
 			s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
 		}
@@ -284,6 +305,31 @@ func (s *Scanner) number() {
 	s.addTokenLiteral(NUMBER, value)
 }
 
+func (s *Scanner) identifier() {
+	for s.isAlphaNumeric(s.peek()) {
+		s.advance()
+	}
+
+	text := string(s.source[s.start:s.current])
+	typ, ok := keywords[text]
+	if !ok {
+		typ = IDENTIFIER
+	}
+	// note: we throw away the text here because the addTokenLiteral function
+	// parses it from the start:current values
+	s.addToken(typ)
+}
+
 func (s *Scanner) isDigit(c rune) bool {
 	return c >= '0' && c <= '9'
+}
+
+func (s *Scanner) isAlpha(c rune) bool {
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		c == '_'
+}
+
+func (s *Scanner) isAlphaNumeric(c rune) bool {
+	return s.isAlpha(c) || s.isDigit(c)
 }
