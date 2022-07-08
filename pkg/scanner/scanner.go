@@ -155,8 +155,14 @@ func (s *Scanner) scanToken() {
 		} else {
 			s.addToken(SLASH)
 		}
+	case ' ':
+		// ignore
+	case '\r':
+		// ignore
+	case '\t':
+		// ignore
 	case '\n':
-		// TODO: ignoring newlines for now so we can test with actual input
+		s.line++
 	default:
 		s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
 	}
