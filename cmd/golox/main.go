@@ -14,6 +14,7 @@ import (
 const (
 	ExitCodeOK         = 0
 	ExitCodeUsageError = 1
+	ExitSyntaxError    = 65
 	ExitIOError        = 100
 )
 
@@ -47,7 +48,9 @@ func (a *Args) get() []string {
 	return os.Args[1:]
 }
 
-type Lox struct{}
+type Lox struct {
+	hadError bool
+}
 
 func (l *Lox) runFile(file string) {
 	b, err := ioutil.ReadFile(file)
@@ -55,6 +58,9 @@ func (l *Lox) runFile(file string) {
 		exitf(ExitIOError, "error reading file '%s': %v", file, err)
 	}
 	l.run(string(b))
+	if l.hadError {
+		exitf(ExitSyntaxError, "")
+	}
 }
 
 func (l *Lox) runPrompt() {
@@ -69,13 +75,24 @@ func (l *Lox) runPrompt() {
 			exitf(ExitIOError, "error reading from stdin: %v", err)
 		}
 		l.run(line)
+		l.hadError = false // don't exit the repl on syntax errors, just ignore the input
 	}
 }
 
 func (l *Lox) run(line string) {
-	scanner := scanner.NewScanner(line)
-	for token := range scanner.ScanTokens() {
+	scanner := scanner.NewScanner(line, l)
+	for _, token := range scanner.ScanTokens() {
 		// TODO
-		fmt.Println(token)
+		_ = token
+		//fmt.Println(token)
 	}
+}
+
+func (l *Lox) Error(line int, message string) {
+	l.report(line, "", message)
+}
+
+func (l *Lox) report(line int, where, message string) {
+	fmt.Printf("[line %d] Error %s: %s", line, where, message)
+	l.hadError = true
 }
