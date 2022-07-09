@@ -1,5 +1,7 @@
 package ast
 
+// GENERATED CODE from cmd/tool/gen/ast/ast-gen.go
+
 import "rhomel.com/crafting-interpreters-go/pkg/scanner"
 
 type Expr interface {
@@ -35,7 +37,7 @@ func (*Literal) isExpr() {}
 var _ Expr = (*Unary)(nil)
 
 type Unary struct {
-	operator scanner.Token
+	Operator scanner.Token
 	Right    Expr
 }
 

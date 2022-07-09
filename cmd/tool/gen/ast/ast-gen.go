@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
@@ -32,7 +33,7 @@ func main() {
 		"Binary":   "Left Expr, Operator scanner.Token, Right Expr",
 		"Grouping": "Expression Expr",
 		"Literal":  "Value interface{}",
-		"Unary":    "operator scanner.Token, Right Expr",
+		"Unary":    "Operator scanner.Token, Right Expr",
 	})
 }
 
@@ -56,7 +57,14 @@ func writeFile(file *os.File, baseName string, types map[string]string) error {
 	if _, err := fmt.Fprint(file, header); err != nil {
 		return err
 	}
-	for name, fields := range types {
+	keys := make([]string, 0, len(types))
+	for k := range types {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys) // iterating Go maps is not stable so iterate by sorted key
+	for _, key := range keys {
+		name := key
+		fields := types[key]
 		generated := template
 		generated = strings.ReplaceAll(generated, "<baseName>", baseName)
 		generated = strings.ReplaceAll(generated, "<Name>", name)
@@ -81,6 +89,8 @@ func defineFields(fieldString string) string {
 
 var templateHeader = `
 package ast
+
+// GENERATED CODE from cmd/tool/gen/ast/ast-gen.go
 
 import "rhomel.com/crafting-interpreters-go/pkg/scanner"
 
