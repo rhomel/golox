@@ -9,20 +9,8 @@ import (
 	"os"
 
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
+	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
 )
-
-const (
-	ExitCodeOK         = 0
-	ExitCodeUsageError = 1
-	ExitSyntaxError    = 65
-	ExitIOError        = 100
-)
-
-func exitf(code int, format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, args...)
-	fmt.Fprintln(os.Stderr)
-	os.Exit(code)
-}
 
 func main() {
 	lox := &Lox{}
@@ -30,7 +18,7 @@ func main() {
 	l := args.len()
 	switch {
 	case l > 1:
-		exitf(ExitCodeUsageError, "usage: golox [file]")
+		exit.Exitf(exit.ExitCodeUsageError, "usage: golox [file]")
 	case l == 1:
 		lox.runFile(args.get()[0])
 	default:
@@ -55,11 +43,11 @@ type Lox struct {
 func (l *Lox) runFile(file string) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		exitf(ExitIOError, "error reading file '%s': %v", file, err)
+		exit.Exitf(exit.ExitIOError, "error reading file '%s': %v", file, err)
 	}
 	l.run(string(b))
 	if l.hadError {
-		exitf(ExitSyntaxError, "")
+		exit.Exitf(exit.ExitSyntaxError, "")
 	}
 }
 
@@ -69,10 +57,10 @@ func (l *Lox) runPrompt() {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
 		if errors.Is(err, io.EOF) {
-			exitf(ExitCodeOK, "// #quit")
+			exit.Exitf(exit.ExitCodeOK, "// #quit")
 		}
 		if err != nil {
-			exitf(ExitIOError, "error reading from stdin: %v", err)
+			exit.Exitf(exit.ExitIOError, "error reading from stdin: %v", err)
 		}
 		l.run(line)
 		l.hadError = false // don't exit the repl on syntax errors, just ignore the input
