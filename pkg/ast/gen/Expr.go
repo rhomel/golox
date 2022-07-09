@@ -18,6 +18,14 @@ type Binary struct {
 
 func (*Binary) isExpr() {}
 
+type BinaryVisitor interface {
+	VisitBinaryExpr(*Binary) string
+}
+
+func (binary *Binary) Accept(visitor BinaryVisitor) string {
+	return visitor.VisitBinaryExpr(binary)
+}
+
 var _ Expr = (*Grouping)(nil)
 
 type Grouping struct {
@@ -25,6 +33,14 @@ type Grouping struct {
 }
 
 func (*Grouping) isExpr() {}
+
+type GroupingVisitor interface {
+	VisitGroupingExpr(*Grouping) string
+}
+
+func (grouping *Grouping) Accept(visitor GroupingVisitor) string {
+	return visitor.VisitGroupingExpr(grouping)
+}
 
 var _ Expr = (*Literal)(nil)
 
@@ -34,6 +50,14 @@ type Literal struct {
 
 func (*Literal) isExpr() {}
 
+type LiteralVisitor interface {
+	VisitLiteralExpr(*Literal) string
+}
+
+func (literal *Literal) Accept(visitor LiteralVisitor) string {
+	return visitor.VisitLiteralExpr(literal)
+}
+
 var _ Expr = (*Unary)(nil)
 
 type Unary struct {
@@ -42,3 +66,11 @@ type Unary struct {
 }
 
 func (*Unary) isExpr() {}
+
+type UnaryVisitor interface {
+	VisitUnaryExpr(*Unary) string
+}
+
+func (unary *Unary) Accept(visitor UnaryVisitor) string {
+	return visitor.VisitUnaryExpr(unary)
+}

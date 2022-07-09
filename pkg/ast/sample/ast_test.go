@@ -17,3 +17,11 @@ type Binary struct {
 }
 
 func (*Binary) isExpr() {}
+
+type BinaryVisitor interface {
+	VisitBinaryExpr(*Binary)
+}
+
+func (binary *Binary) Accept(visitor BinaryVisitor) {
+	visitor.VisitBinaryExpr(binary)
+}

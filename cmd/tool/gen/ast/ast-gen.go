@@ -68,6 +68,7 @@ func writeFile(file *os.File, baseName string, types map[string]string) error {
 		generated := template
 		generated = strings.ReplaceAll(generated, "<baseName>", baseName)
 		generated = strings.ReplaceAll(generated, "<Name>", name)
+		generated = strings.ReplaceAll(generated, "<lowercaseName>", strings.ToLower(name))
 		generated = strings.ReplaceAll(generated, "<Fields>", defineFields(fields))
 		if _, err := fmt.Fprintf(file, generated); err != nil {
 			return err
@@ -107,6 +108,14 @@ type <Name> struct {
 }
 
 func (*<Name>) is<baseName>() {}
+
+type <Name>Visitor interface {
+	Visit<Name><baseName>(*<Name>) string
+}
+
+func (<lowercaseName> *<Name>) Accept(visitor <Name>Visitor) string {
+	return visitor.Visit<Name><baseName>(<lowercaseName>)
+}
 `
 
 func gofmt(path string) {
