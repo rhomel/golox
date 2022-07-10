@@ -9,6 +9,7 @@ const (
 	ExitCodeOK         = 0
 	ExitCodeUsageError = 1
 	ExitSyntaxError    = 65
+	ExitRuntimeError   = 70
 	ExitIOError        = 100
 )
 

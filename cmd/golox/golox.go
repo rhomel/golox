@@ -9,6 +9,7 @@ import (
 	"os"
 
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
+	"rhomel.com/crafting-interpreters-go/pkg/interpreter"
 	"rhomel.com/crafting-interpreters-go/pkg/parser"
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
 	"rhomel.com/crafting-interpreters-go/pkg/util/ast/printer"
@@ -16,7 +17,7 @@ import (
 )
 
 func main() {
-	lox := &Lox{}
+	lox := NewLox()
 	args := &Args{}
 	l := args.len()
 	switch {
@@ -40,7 +41,16 @@ func (a *Args) get() []string {
 }
 
 type Lox struct {
-	hadError bool
+	hadError        bool
+	hadRuntimeError bool
+
+	interpreter *interpreter.Interpreter
+}
+
+func NewLox() *Lox {
+	lox := &Lox{}
+	lox.interpreter = interpreter.NewInterpreter(lox)
+	return lox
 }
 
 func (l *Lox) runFile(file string) {
@@ -51,6 +61,9 @@ func (l *Lox) runFile(file string) {
 	l.run(string(b))
 	if l.hadError {
 		exit.Exitf(exit.ExitSyntaxError, "")
+	}
+	if l.hadRuntimeError {
+		exit.Exitf(exit.ExitRuntimeError, "")
 	}
 }
 
@@ -76,7 +89,8 @@ func (l *Lox) run(line string) {
 	//printTokens(tokens) // TODO: make a flag to enable printing scanned tokens
 	parser := parser.NewParser(tokens, l)
 	expr := parser.Parse()
-	printAst(expr) // TODO: make a flag to enable printing the parsed ast
+	//printAst(expr) // TODO: make a flag to enable printing the parsed ast
+	l.interpreter.Interpret(expr)
 }
 
 func printAst(expr ast.Expr) {
@@ -105,4 +119,9 @@ func (l *Lox) ParseError(token scanner.Token, message string) {
 	} else {
 		l.report(token.Line, " at '"+token.Lexeme+"'", message)
 	}
+}
+
+func (l *Lox) RuntimeError(token scanner.Token, message string) {
+	fmt.Printf("%s\n[line %d]\n", message, token.Line)
+	l.hadRuntimeError = true
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
+	"rhomel.com/crafting-interpreters-go/pkg/util/check"
 	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
 )
 
@@ -37,7 +38,7 @@ func (a *AstPrinter) VisitGroupingExprString(grouping *ast.Grouping) string {
 }
 
 func (a *AstPrinter) VisitLiteralExprString(literal *ast.Literal) string {
-	if isNil(literal) {
+	if check.IsNil(literal) {
 		return "nil"
 	}
 	return fmt.Sprintf("%v", literal.Value)
@@ -57,15 +58,4 @@ func (a *AstPrinter) parenthesize(name string, exprs ...ast.Expr) string {
 	}
 	builder.WriteString(")")
 	return builder.String()
-}
-
-func isNil(i interface{}) bool {
-	if i == nil {
-		return true
-	}
-	switch reflect.TypeOf(i).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
-		return reflect.ValueOf(i).IsNil()
-	}
-	return false
 }

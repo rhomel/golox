@@ -1,0 +1,224 @@
+package interpreter
+
+import (
+	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+
+	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
+	"rhomel.com/crafting-interpreters-go/pkg/scanner"
+	"rhomel.com/crafting-interpreters-go/pkg/util/check"
+	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
+)
+
+type Interpreter struct {
+	reporter RuntimeErrorReporter
+}
+
+type RuntimeErrorReporter interface {
+	RuntimeError(token scanner.Token, message string)
+}
+
+func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
+	return &Interpreter{reporter}
+}
+
+func (in *Interpreter) Interpret(expression ast.Expr) {
+	defer func() {
+		if r := recover(); r != nil {
+			// TODO
+			if err, ok := r.(*RuntimeError); ok {
+				in.reporter.RuntimeError(err.token, err.message)
+			} else {
+				in.reporter.RuntimeError(scanner.Token{}, fmt.Sprintf("%v", r)) // TODO
+			}
+		}
+	}()
+	value := in.evaluate(expression)
+	fmt.Println(in.stringify(value))
+}
+
+func (in *Interpreter) Accept(elem interface{}) interface{} {
+	// Go has no dynamic dispatch and inheritance so we have to resort to a type switch
+	switch v := elem.(type) {
+	case *ast.Binary:
+		return v.Accept(in)
+	case *ast.Grouping:
+		return v.Accept(in)
+	case *ast.Literal:
+		return v.Accept(in)
+	case *ast.Unary:
+		return v.Accept(in)
+	default:
+		exit.Exitf(exit.ExitSyntaxError, "unsupported type: %s", reflect.TypeOf(elem).Name())
+		return nil
+	}
+}
+
+func (in *Interpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
+	left := in.evaluate(binary.Left)
+	right := in.evaluate(binary.Right)
+
+	switch binary.Operator.Typ {
+	case scanner.GREATER:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) > mustDouble(right)
+	case scanner.GREATER_EQUAL:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) >= mustDouble(right)
+	case scanner.LESS:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) < mustDouble(right)
+	case scanner.LESS_EQUAL:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) <= mustDouble(right)
+	case scanner.BANG_EQUAL:
+		return !in.isEqual(left, right)
+	case scanner.EQUAL_EQUAL:
+		return in.isEqual(left, right)
+	case scanner.MINUS:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) - mustDouble(right)
+	case scanner.SLASH:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) / mustDouble(right)
+	case scanner.STAR:
+		in.checkNumberOperands(binary.Operator, left, right)
+		return mustDouble(left) * mustDouble(right)
+	case scanner.PLUS:
+		leftDouble, leftIsDouble := left.(float64)
+		rightDouble, rightIsDouble := right.(float64)
+		if leftIsDouble && rightIsDouble {
+			return leftDouble + rightDouble
+		}
+		leftString, leftIsString := left.(string)
+		rightString, rightIsString := right.(string)
+		if leftIsString && rightIsString {
+			return leftString + rightString
+		}
+		if leftIsDouble && rightIsString {
+			panic(&RuntimeError{binary.Operator, "Left operand is double but right operand is string."})
+		}
+		if leftIsString && rightIsDouble {
+			panic(&RuntimeError{binary.Operator, "Right operand is double but left operand is string."})
+		}
+		if !leftIsDouble && !leftIsString {
+			panic(fmt.Sprintf("expected either double or string value for left expression: %v", left)) // TODO
+		}
+		if !rightIsDouble && !rightIsString {
+			panic(fmt.Sprintf("expected either double or string value for right expression: %v", right)) // TODO
+		}
+	}
+	return nil // unreachable
+}
+
+func (in *Interpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
+	return in.evaluate(grouping)
+}
+
+func (in *Interpreter) VisitLiteralExpr(literal *ast.Literal) interface{} {
+	return literal.Value
+}
+
+func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
+	right := in.evaluate(unary.Right)
+
+	switch unary.Operator.Typ {
+	case scanner.MINUS:
+		in.checkNumberOperand(unary.Operator, right)
+		return -mustDouble(right)
+	case scanner.BANG:
+		return !in.isTruthy(right)
+	}
+	return nil // unreachable
+}
+
+func (in *Interpreter) checkNumberOperand(operator scanner.Token, operand interface{}) {
+	if _, ok := operand.(float64); ok {
+		return
+	}
+	panic(&RuntimeError{operator, "Operand must be a number."})
+}
+
+func (in *Interpreter) checkNumberOperands(operator scanner.Token, left, right interface{}) {
+	_, leftOk := left.(float64)
+	_, rightOk := right.(float64)
+	if leftOk && rightOk {
+		return
+	}
+	panic(&RuntimeError{operator, "Operands must be a numbers."})
+}
+
+// isTruthy returns false only for 'nil' and the boolean value false
+func (in *Interpreter) isTruthy(it interface{}) bool {
+	if check.IsNil(it) {
+		return false
+	}
+	if b, ok := it.(bool); ok {
+		return b
+	}
+	return true
+}
+
+func (in *Interpreter) isEqual(a, b interface{}) bool {
+	if check.IsNil(a) && check.IsNil(b) {
+		return true
+	}
+	if check.IsNil(a) {
+		return false
+	}
+	return a == b // TODO: will this work?
+}
+
+func (in *Interpreter) stringify(it interface{}) string {
+	if check.IsNil(it) {
+		return "nil"
+	}
+	if double, ok := it.(float64); ok {
+		text := fmt.Sprintf("%f", double)
+		text = maybeInteger(text)
+		return text
+	}
+	if str, ok := it.(string); ok {
+		return str
+	}
+	if b, ok := it.(bool); ok {
+		if b {
+			return "true"
+		}
+		return "false"
+	}
+	panic(fmt.Sprintf("unhandled type in stringify: %v", it)) // TODO
+}
+
+func (in *Interpreter) evaluate(expr ast.Expr) interface{} {
+	return in.Accept(expr)
+}
+
+func mustDouble(it interface{}) float64 {
+	if double, ok := it.(float64); ok {
+		return double
+	}
+	panic(fmt.Sprintf("expression value did not evaluate to a float64: %v", it)) // TODO
+}
+
+var matchTrailingZeros = regexp.MustCompile("\\.0+$")
+
+func maybeInteger(num string) string {
+	if matchTrailingZeros.Match([]byte(num)) {
+		return num[:strings.Index(num, ".")]
+	}
+	return num
+}
+
+type RuntimeError struct {
+	token   scanner.Token
+	message string
+}
+
+func (e *RuntimeError) Error() string {
+	return e.message
+}
+
+var _ error = (*RuntimeError)(nil)
