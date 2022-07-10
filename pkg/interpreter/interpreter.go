@@ -22,7 +22,7 @@ type RuntimeErrorReporter interface {
 }
 
 func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
-	return &Interpreter{reporter, NewEnvironment()}
+	return &Interpreter{reporter, NewEnvironment(nil)}
 }
 
 func (in *Interpreter) Interpret(statements []ast.Stmt) {
