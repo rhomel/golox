@@ -26,6 +26,14 @@ func (binary *Binary) AcceptString(visitor BinaryStringVisitor) string {
 	return visitor.VisitBinaryExprString(binary)
 }
 
+type BinaryVisitor interface {
+	VisitBinaryExpr(*Binary) interface{}
+}
+
+func (binary *Binary) Accept(visitor BinaryVisitor) interface{} {
+	return visitor.VisitBinaryExpr(binary)
+}
+
 var _ Expr = (*Grouping)(nil)
 
 type Grouping struct {
@@ -40,6 +48,14 @@ type GroupingStringVisitor interface {
 
 func (grouping *Grouping) AcceptString(visitor GroupingStringVisitor) string {
 	return visitor.VisitGroupingExprString(grouping)
+}
+
+type GroupingVisitor interface {
+	VisitGroupingExpr(*Grouping) interface{}
+}
+
+func (grouping *Grouping) Accept(visitor GroupingVisitor) interface{} {
+	return visitor.VisitGroupingExpr(grouping)
 }
 
 var _ Expr = (*Literal)(nil)
@@ -58,6 +74,14 @@ func (literal *Literal) AcceptString(visitor LiteralStringVisitor) string {
 	return visitor.VisitLiteralExprString(literal)
 }
 
+type LiteralVisitor interface {
+	VisitLiteralExpr(*Literal) interface{}
+}
+
+func (literal *Literal) Accept(visitor LiteralVisitor) interface{} {
+	return visitor.VisitLiteralExpr(literal)
+}
+
 var _ Expr = (*Unary)(nil)
 
 type Unary struct {
@@ -73,4 +97,12 @@ type UnaryStringVisitor interface {
 
 func (unary *Unary) AcceptString(visitor UnaryStringVisitor) string {
 	return visitor.VisitUnaryExprString(unary)
+}
+
+type UnaryVisitor interface {
+	VisitUnaryExpr(*Unary) interface{}
+}
+
+func (unary *Unary) Accept(visitor UnaryVisitor) interface{} {
+	return visitor.VisitUnaryExpr(unary)
 }

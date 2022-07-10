@@ -116,6 +116,14 @@ type <Name>StringVisitor interface {
 func (<lowercaseName> *<Name>) AcceptString(visitor <Name>StringVisitor) string {
 	return visitor.Visit<Name><baseName>String(<lowercaseName>)
 }
+
+type <Name>Visitor interface {
+	Visit<Name><baseName>(*<Name>) interface{}
+}
+
+func (<lowercaseName> *<Name>) Accept(visitor <Name>Visitor) interface{} {
+	return visitor.Visit<Name><baseName>(<lowercaseName>)
+}
 `
 
 func gofmt(path string) {
