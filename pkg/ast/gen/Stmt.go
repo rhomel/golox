@@ -22,6 +22,14 @@ func (expression *Expression) AcceptString(visitor ExpressionStringVisitor) stri
 	return visitor.VisitExpressionStmtString(expression)
 }
 
+type ExpressionVoidVisitor interface {
+	VisitExpressionStmtVoid(*Expression)
+}
+
+func (expression *Expression) AcceptVoid(visitor ExpressionVoidVisitor) {
+	visitor.VisitExpressionStmtVoid(expression)
+}
+
 type ExpressionVisitor interface {
 	VisitExpressionStmt(*Expression) interface{}
 }
@@ -44,6 +52,14 @@ type PrintStringVisitor interface {
 
 func (print *Print) AcceptString(visitor PrintStringVisitor) string {
 	return visitor.VisitPrintStmtString(print)
+}
+
+type PrintVoidVisitor interface {
+	VisitPrintStmtVoid(*Print)
+}
+
+func (print *Print) AcceptVoid(visitor PrintVoidVisitor) {
+	visitor.VisitPrintStmtVoid(print)
 }
 
 type PrintVisitor interface {

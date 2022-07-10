@@ -15,6 +15,17 @@ package parser
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")" ;
 
+// statement rules
+//   [https://craftinginterpreters.com/statements-and-state.html#statements]
+//
+// program        → statement* EOF ;
+//
+// statement      → exprStmt
+//                | printStmt ;
+//
+// exprStmt       → expression ";" ;
+// printStmt      → "print" expression ";" ;
+
 import (
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
@@ -38,18 +49,39 @@ func NewParser(tokens []*scanner.Token, reporter ParseErrorReporter) *Parser {
 	return parser
 }
 
-func (p *Parser) Parse() (expr ast.Expr) {
+func (p *Parser) Parse() (statements []ast.Stmt) {
 	defer func() {
 		if r := recover(); r != nil {
-			expr = nil
+			statements = nil
 		}
 	}()
-	expr = p.expression()
+	for !p.isAtEnd() {
+		statements = append(statements, p.statement())
+	}
 	return
 }
 
 func (p *Parser) expression() ast.Expr {
 	return p.equality()
+}
+
+func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.PRINT) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() ast.Stmt {
+	expr := p.expression()
+	p.consume(scanner.SEMICOLON, "Expect ';' after value.")
+	return &ast.Print{expr}
+}
+
+func (p *Parser) expressionStatement() ast.Stmt {
+	expr := p.expression()
+	p.consume(scanner.SEMICOLON, "Expect ';' after expression.")
+	return &ast.Expression{expr}
 }
 
 func (p *Parser) equality() ast.Expr {

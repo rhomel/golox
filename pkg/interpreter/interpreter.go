@@ -24,7 +24,7 @@ func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
 	return &Interpreter{reporter}
 }
 
-func (in *Interpreter) Interpret(expression ast.Expr) {
+func (in *Interpreter) Interpret(statements []ast.Stmt) {
 	defer func() {
 		if r := recover(); r != nil {
 			// TODO
@@ -35,8 +35,9 @@ func (in *Interpreter) Interpret(expression ast.Expr) {
 			}
 		}
 	}()
-	value := in.evaluate(expression)
-	fmt.Println(in.stringify(value))
+	for _, stmt := range statements {
+		in.execute(stmt)
+	}
 }
 
 func (in *Interpreter) Accept(elem interface{}) interface{} {
@@ -196,6 +197,26 @@ func (in *Interpreter) stringify(it interface{}) string {
 
 func (in *Interpreter) evaluate(expr ast.Expr) interface{} {
 	return in.Accept(expr)
+}
+
+func (in *Interpreter) execute(stmt ast.Stmt) {
+	switch v := stmt.(type) {
+	case *ast.Expression:
+		v.AcceptVoid(in)
+	case *ast.Print:
+		v.AcceptVoid(in)
+	default:
+		exit.Exitf(exit.ExitSyntaxError, "unsupported statement: %s", reflect.TypeOf(stmt).Name())
+	}
+}
+
+func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
+	in.evaluate(stmt.Expression)
+}
+
+func (in *Interpreter) VisitPrintStmtVoid(stmt *ast.Print) {
+	value := in.evaluate(stmt.Expression)
+	fmt.Println(in.stringify(value))
 }
 
 func mustDouble(it interface{}) float64 {

@@ -122,6 +122,14 @@ func (<lowercaseName> *<Name>) AcceptString(visitor <Name>StringVisitor) string 
 	return visitor.Visit<Name><baseName>String(<lowercaseName>)
 }
 
+type <Name>VoidVisitor interface {
+	Visit<Name><baseName>Void(*<Name>)
+}
+
+func (<lowercaseName> *<Name>) AcceptVoid(visitor <Name>VoidVisitor) {
+	visitor.Visit<Name><baseName>Void(<lowercaseName>)
+}
+
 type <Name>Visitor interface {
 	Visit<Name><baseName>(*<Name>) interface{}
 }

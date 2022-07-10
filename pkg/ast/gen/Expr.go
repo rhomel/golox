@@ -26,6 +26,14 @@ func (binary *Binary) AcceptString(visitor BinaryStringVisitor) string {
 	return visitor.VisitBinaryExprString(binary)
 }
 
+type BinaryVoidVisitor interface {
+	VisitBinaryExprVoid(*Binary)
+}
+
+func (binary *Binary) AcceptVoid(visitor BinaryVoidVisitor) {
+	visitor.VisitBinaryExprVoid(binary)
+}
+
 type BinaryVisitor interface {
 	VisitBinaryExpr(*Binary) interface{}
 }
@@ -48,6 +56,14 @@ type GroupingStringVisitor interface {
 
 func (grouping *Grouping) AcceptString(visitor GroupingStringVisitor) string {
 	return visitor.VisitGroupingExprString(grouping)
+}
+
+type GroupingVoidVisitor interface {
+	VisitGroupingExprVoid(*Grouping)
+}
+
+func (grouping *Grouping) AcceptVoid(visitor GroupingVoidVisitor) {
+	visitor.VisitGroupingExprVoid(grouping)
 }
 
 type GroupingVisitor interface {
@@ -74,6 +90,14 @@ func (literal *Literal) AcceptString(visitor LiteralStringVisitor) string {
 	return visitor.VisitLiteralExprString(literal)
 }
 
+type LiteralVoidVisitor interface {
+	VisitLiteralExprVoid(*Literal)
+}
+
+func (literal *Literal) AcceptVoid(visitor LiteralVoidVisitor) {
+	visitor.VisitLiteralExprVoid(literal)
+}
+
 type LiteralVisitor interface {
 	VisitLiteralExpr(*Literal) interface{}
 }
@@ -97,6 +121,14 @@ type UnaryStringVisitor interface {
 
 func (unary *Unary) AcceptString(visitor UnaryStringVisitor) string {
 	return visitor.VisitUnaryExprString(unary)
+}
+
+type UnaryVoidVisitor interface {
+	VisitUnaryExprVoid(*Unary)
+}
+
+func (unary *Unary) AcceptVoid(visitor UnaryVoidVisitor) {
+	visitor.VisitUnaryExprVoid(unary)
 }
 
 type UnaryVisitor interface {

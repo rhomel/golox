@@ -88,9 +88,9 @@ func (l *Lox) run(line string) {
 	tokens := scanner.ScanTokens()
 	//printTokens(tokens) // TODO: make a flag to enable printing scanned tokens
 	parser := parser.NewParser(tokens, l)
-	expr := parser.Parse()
+	statements := parser.Parse()
 	//printAst(expr) // TODO: make a flag to enable printing the parsed ast
-	l.interpreter.Interpret(expr)
+	l.interpreter.Interpret(statements)
 }
 
 func printAst(expr ast.Expr) {
