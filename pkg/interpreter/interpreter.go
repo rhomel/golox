@@ -13,7 +13,8 @@ import (
 )
 
 type Interpreter struct {
-	reporter RuntimeErrorReporter
+	reporter    RuntimeErrorReporter
+	environment *Environment
 }
 
 type RuntimeErrorReporter interface {
@@ -21,7 +22,7 @@ type RuntimeErrorReporter interface {
 }
 
 func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
-	return &Interpreter{reporter}
+	return &Interpreter{reporter, NewEnvironment()}
 }
 
 func (in *Interpreter) Interpret(statements []ast.Stmt) {
@@ -50,6 +51,8 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 	case *ast.Literal:
 		return v.Accept(in)
 	case *ast.Unary:
+		return v.Accept(in)
+	case *ast.Variable:
 		return v.Accept(in)
 	default:
 		exit.Exitf(exit.ExitSyntaxError, "unsupported type: %s", reflect.TypeOf(elem).Name())
@@ -137,6 +140,10 @@ func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
 	return nil // unreachable
 }
 
+func (in *Interpreter) VisitVariableExpr(variable *ast.Variable) interface{} {
+	return in.environment.Get(variable.Name)
+}
+
 func (in *Interpreter) checkNumberOperand(operator scanner.Token, operand interface{}) {
 	if _, ok := operand.(float64); ok {
 		return
@@ -205,6 +212,8 @@ func (in *Interpreter) execute(stmt ast.Stmt) {
 		v.AcceptVoid(in)
 	case *ast.Print:
 		v.AcceptVoid(in)
+	case *ast.VarStmt:
+		v.AcceptVoid(in)
 	default:
 		exit.Exitf(exit.ExitSyntaxError, "unsupported statement: %s", reflect.TypeOf(stmt).Name())
 	}
@@ -217,6 +226,14 @@ func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 func (in *Interpreter) VisitPrintStmtVoid(stmt *ast.Print) {
 	value := in.evaluate(stmt.Expression)
 	fmt.Println(in.stringify(value))
+}
+
+func (in *Interpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
+	var value interface{}
+	if stmt.Initializer != nil {
+		value = in.evaluate(stmt.Initializer)
+	}
+	in.environment.Define(stmt.Name.Lexeme, value)
 }
 
 func mustDouble(it interface{}) float64 {

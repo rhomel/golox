@@ -13,12 +13,19 @@ package parser
 // unary          → ( "!" | "-" ) unary
 //                | primary ;
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
-//                | "(" expression ")" ;
+//                | "(" expression ")"
+//                | IDENTIFIER ;
 
 // statement rules
 //   [https://craftinginterpreters.com/statements-and-state.html#statements]
+//   [https://craftinginterpreters.com/statements-and-state.html#variable-syntax]
 //
-// program        → statement* EOF ;
+// program        → declaration* EOF ;
+//
+// declaration    → varDecl
+//                | statement ;
+//
+// varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 //
 // statement      → exprStmt
 //                | printStmt ;
@@ -50,19 +57,37 @@ func NewParser(tokens []*scanner.Token, reporter ParseErrorReporter) *Parser {
 }
 
 func (p *Parser) Parse() (statements []ast.Stmt) {
-	defer func() {
-		if r := recover(); r != nil {
-			statements = nil
-		}
-	}()
 	for !p.isAtEnd() {
-		statements = append(statements, p.statement())
+		statements = append(statements, p.declaration())
 	}
 	return
 }
 
 func (p *Parser) expression() ast.Expr {
 	return p.equality()
+}
+
+func (p *Parser) declaration() (stmt ast.Stmt) {
+	defer func() {
+		if r := recover(); r != nil {
+			p.syncrhonize()
+			stmt = nil
+		}
+	}()
+	if p.match(scanner.VAR) {
+		return p.varDeclaration()
+	}
+	return p.statement()
+}
+
+func (p *Parser) varDeclaration() ast.Stmt {
+	identifier := p.consume(scanner.IDENTIFIER, "Expect variable name.")
+	var initializer ast.Expr
+	if p.match(scanner.EQUAL) {
+		initializer = p.expression()
+	}
+	p.consume(scanner.SEMICOLON, "Expect ';' after variable declaration.")
+	return &ast.VarStmt{identifier, initializer}
 }
 
 func (p *Parser) statement() ast.Stmt {
@@ -145,6 +170,10 @@ func (p *Parser) primary() ast.Expr {
 	}
 	if p.match(scanner.NUMBER, scanner.STRING) {
 		return &ast.Literal{p.previous().Literal}
+	}
+	if p.match(scanner.IDENTIFIER) {
+		name := p.previous()
+		return &ast.Variable{name}
 	}
 	if p.match(scanner.LEFT_PAREN) {
 		expr := p.expression()

@@ -138,3 +138,35 @@ type UnaryVisitor interface {
 func (unary *Unary) Accept(visitor UnaryVisitor) interface{} {
 	return visitor.VisitUnaryExpr(unary)
 }
+
+var _ Expr = (*Variable)(nil)
+
+type Variable struct {
+	Name scanner.Token
+}
+
+func (*Variable) isExpr() {}
+
+type VariableStringVisitor interface {
+	VisitVariableExprString(*Variable) string
+}
+
+func (variable *Variable) AcceptString(visitor VariableStringVisitor) string {
+	return visitor.VisitVariableExprString(variable)
+}
+
+type VariableVoidVisitor interface {
+	VisitVariableExprVoid(*Variable)
+}
+
+func (variable *Variable) AcceptVoid(visitor VariableVoidVisitor) {
+	visitor.VisitVariableExprVoid(variable)
+}
+
+type VariableVisitor interface {
+	VisitVariableExpr(*Variable) interface{}
+}
+
+func (variable *Variable) Accept(visitor VariableVisitor) interface{} {
+	return visitor.VisitVariableExpr(variable)
+}

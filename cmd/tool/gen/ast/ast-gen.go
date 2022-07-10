@@ -34,11 +34,13 @@ func main() {
 		"Grouping": "Expression Expr",
 		"Literal":  "Value interface{}",
 		"Unary":    "Operator scanner.Token, Right Expr",
+		"Variable": "Name scanner.Token",
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
 	defineAST(outputDirectory, "Stmt", map[string]string{
 		"Expression": "Expression Expr",
 		"Print":      "Expression Expr",
-	}, "")
+		"VarStmt":    "Name scanner.Token, Initializer Expr",
+	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
 }
 
 func defineAST(outputDirectory, baseName string, types map[string]string, imports string) {
