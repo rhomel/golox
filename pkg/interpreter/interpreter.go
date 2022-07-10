@@ -98,10 +98,12 @@ func (in *Interpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
 			return leftString + rightString
 		}
 		if leftIsDouble && rightIsString {
-			panic(&RuntimeError{binary.Operator, "Left operand is double but right operand is string."})
+			// TODO: improve this to reference the actual token literal
+			panic(&RuntimeError{binary.Operator, fmt.Sprintf("Left operand '%f' is double but right operand '%s' is string.", leftDouble, rightString)})
 		}
 		if leftIsString && rightIsDouble {
-			panic(&RuntimeError{binary.Operator, "Right operand is double but left operand is string."})
+			// TODO: improve this to reference the actual token literal
+			panic(&RuntimeError{binary.Operator, fmt.Sprintf("Left operand '%s' is string but right operand '%f' is double.", leftString, rightDouble)})
 		}
 		if !leftIsDouble && !leftIsString {
 			panic(fmt.Sprintf("expected either double or string value for left expression: %v", left)) // TODO
