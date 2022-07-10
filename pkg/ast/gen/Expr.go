@@ -8,6 +8,39 @@ type Expr interface {
 	isExpr() // private method to tag which structs are Expr
 }
 
+var _ Expr = (*Assign)(nil)
+
+type Assign struct {
+	Name  scanner.Token
+	Value Expr
+}
+
+func (*Assign) isExpr() {}
+
+type AssignStringVisitor interface {
+	VisitAssignExprString(*Assign) string
+}
+
+func (assign *Assign) AcceptString(visitor AssignStringVisitor) string {
+	return visitor.VisitAssignExprString(assign)
+}
+
+type AssignVoidVisitor interface {
+	VisitAssignExprVoid(*Assign)
+}
+
+func (assign *Assign) AcceptVoid(visitor AssignVoidVisitor) {
+	visitor.VisitAssignExprVoid(assign)
+}
+
+type AssignVisitor interface {
+	VisitAssignExpr(*Assign) interface{}
+}
+
+func (assign *Assign) Accept(visitor AssignVisitor) interface{} {
+	return visitor.VisitAssignExpr(assign)
+}
+
 var _ Expr = (*Binary)(nil)
 
 type Binary struct {

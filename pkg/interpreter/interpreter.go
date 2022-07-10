@@ -56,8 +56,10 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 		return v.Accept(in)
 	case *ast.Variable:
 		return v.Accept(in)
+	case *ast.Assign:
+		return v.Accept(in)
 	default:
-		exit.Exitf(exit.ExitSyntaxError, "unsupported type: %s", reflect.TypeOf(elem).Name())
+		exit.Exitf(exit.ExitSyntaxError, "unsupported expression type: %s", reflect.TypeOf(elem).Name())
 		return nil
 	}
 }
@@ -236,6 +238,12 @@ func (in *Interpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
 		value = in.evaluate(stmt.Initializer)
 	}
 	in.environment.Define(stmt.Name.Lexeme, value)
+}
+
+func (in *Interpreter) VisitAssignExpr(assign *ast.Assign) interface{} {
+	value := in.evaluate(assign.Value)
+	in.environment.Assign(assign.Name, value)
+	return value
 }
 
 func mustDouble(it interface{}) float64 {

@@ -111,7 +111,7 @@ func (l *Lox) Error(line int, message string) {
 }
 
 func (l *Lox) report(line int, where, message string) {
-	fmt.Printf("[line %d] Error%s: %s", line, where, message)
+	fmt.Printf("[line %d] Error%s: %s\n", line, where, message)
 	l.hadError = true
 }
 

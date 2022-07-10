@@ -35,6 +35,7 @@ func main() {
 		"Literal":  "Value interface{}",
 		"Unary":    "Operator scanner.Token, Right Expr",
 		"Variable": "Name scanner.Token",
+		"Assign":   "Name scanner.Token, Value Expr",
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
 	defineAST(outputDirectory, "Stmt", map[string]string{
 		"Expression": "Expression Expr",

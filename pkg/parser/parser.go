@@ -4,8 +4,11 @@ package parser
 //
 // grammar reference:
 //   [https://craftinginterpreters.com/parsing-expressions.html#ambiguity-and-the-parsing-game]
+//   [https://craftinginterpreters.com/statements-and-state.html#assignment-syntax]
 //
-// expression     → equality ;
+// expression     → assignment ;
+// assignment     → IDENTIFIER "=" assignment
+//                | equality ;
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 // term           → factor ( ( "-" | "+" ) factor )* ;
@@ -64,7 +67,28 @@ func (p *Parser) Parse() (statements []ast.Stmt) {
 }
 
 func (p *Parser) expression() ast.Expr {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() ast.Expr {
+	// this is no the standard recursive descent pattern:
+	// ref: https://craftinginterpreters.com/statements-and-state.html#assignment-syntax
+	// assume there's an equality expression for now, even if it is an
+	// IDENTIFER it will be parsed as an IDENTIFIER
+	expr := p.equality()
+
+	// see if there's an EQUAL token
+	if p.match(scanner.EQUAL) {
+		equals := p.previous()
+		// see if the matched expr was an IDENTIFIER
+		variable, ok := expr.(*ast.Variable)
+		if ok {
+			value := p.assignment()
+			return &ast.Assign{variable.Name, value}
+		}
+		p.err(equals, "Invalid assignment target.")
+	}
+	return expr
 }
 
 func (p *Parser) declaration() (stmt ast.Stmt) {

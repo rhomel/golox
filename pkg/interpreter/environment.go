@@ -26,3 +26,11 @@ func (e *Environment) Get(name scanner.Token) interface{} {
 	}
 	panic(&RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.Lexeme)})
 }
+
+func (e *Environment) Assign(name scanner.Token, value interface{}) {
+	if _, ok := e.values[name.Lexeme]; ok {
+		e.values[name.Lexeme] = value
+		return
+	}
+	panic(&RuntimeError{name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme)})
+}
