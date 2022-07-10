@@ -8,7 +8,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
+	"rhomel.com/crafting-interpreters-go/pkg/parser"
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
+	"rhomel.com/crafting-interpreters-go/pkg/util/ast/printer"
 	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
 )
 
@@ -69,8 +72,20 @@ func (l *Lox) runPrompt() {
 
 func (l *Lox) run(line string) {
 	scanner := scanner.NewScanner(line, l)
-	for _, token := range scanner.ScanTokens() {
-		// TODO
+	tokens := scanner.ScanTokens()
+	//printTokens(tokens) // TODO: make a flag to enable printing scanned tokens
+	parser := parser.NewParser(tokens, l)
+	expr := parser.Parse()
+	printAst(expr) // TODO: make a flag to enable printing the parsed ast
+}
+
+func printAst(expr ast.Expr) {
+	printer := &printer.AstPrinter{}
+	fmt.Println(printer.Accept(expr))
+}
+
+func printTokens(tokens []*scanner.Token) {
+	for _, token := range tokens {
 		fmt.Printf("line: %d, token: %s\n", token.Line, token.String())
 	}
 }
@@ -82,4 +97,12 @@ func (l *Lox) Error(line int, message string) {
 func (l *Lox) report(line int, where, message string) {
 	fmt.Printf("[line %d] Error%s: %s", line, where, message)
 	l.hadError = true
+}
+
+func (l *Lox) ParseError(token scanner.Token, message string) {
+	if token.Typ == scanner.EOF {
+		l.report(token.Line, " at end", message)
+	} else {
+		l.report(token.Line, " at '"+token.Lexeme+"'", message)
+	}
 }
