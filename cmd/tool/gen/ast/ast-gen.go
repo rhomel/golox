@@ -34,10 +34,14 @@ func main() {
 		"Grouping": "Expression Expr",
 		"Literal":  "Value interface{}",
 		"Unary":    "Operator scanner.Token, Right Expr",
-	})
+	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
+	defineAST(outputDirectory, "Stmt", map[string]string{
+		"Expression": "Expression Expr",
+		"Print":      "Expression Expr",
+	}, "")
 }
 
-func defineAST(outputDirectory, baseName string, types map[string]string) {
+func defineAST(outputDirectory, baseName string, types map[string]string, imports string) {
 	path := filepath.Join(outputDirectory, baseName+".go")
 	file, err := os.Create(path)
 	if err != nil {
@@ -45,15 +49,16 @@ func defineAST(outputDirectory, baseName string, types map[string]string) {
 	}
 	func() {
 		defer file.Close()
-		if err := writeFile(file, baseName, types); err != nil {
+		if err := writeFile(file, baseName, types, imports); err != nil {
 			exit.Exitf(exit.ExitIOError, fmt.Sprintf("error writing to file '%s': %v", path, err))
 		}
 	}()
 	gofmt(path)
 }
 
-func writeFile(file *os.File, baseName string, types map[string]string) error {
+func writeFile(file *os.File, baseName string, types map[string]string, imports string) error {
 	header := strings.ReplaceAll(templateHeader, "<baseName>", baseName)
+	header = strings.ReplaceAll(header, "<imports>", imports)
 	if _, err := fmt.Fprint(file, header); err != nil {
 		return err
 	}
@@ -93,7 +98,7 @@ package ast
 
 // GENERATED CODE from cmd/tool/gen/ast/ast-gen.go
 
-import "rhomel.com/crafting-interpreters-go/pkg/scanner"
+<imports>
 
 type <baseName> interface {
 	is<baseName>() // private method to tag which structs are <baseName>
