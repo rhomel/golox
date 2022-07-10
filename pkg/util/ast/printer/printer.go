@@ -15,35 +15,35 @@ func (a *AstPrinter) Accept(elem interface{}) string {
 	// Go has no dynamic dispatch and inheritance so we have to resort to a type switch
 	switch v := elem.(type) {
 	case *ast.Binary:
-		return v.Accept(a)
+		return v.AcceptString(a)
 	case *ast.Grouping:
-		return v.Accept(a)
+		return v.AcceptString(a)
 	case *ast.Literal:
-		return v.Accept(a)
+		return v.AcceptString(a)
 	case *ast.Unary:
-		return v.Accept(a)
+		return v.AcceptString(a)
 	default:
 		exit.Exitf(exit.ExitSyntaxError, "unsupported type: %s", reflect.TypeOf(elem).Name())
 		return ""
 	}
 }
 
-func (a *AstPrinter) VisitBinaryExpr(binary *ast.Binary) string {
+func (a *AstPrinter) VisitBinaryExprString(binary *ast.Binary) string {
 	return a.parenthesize(binary.Operator.Lexeme, binary.Left, binary.Right)
 }
 
-func (a *AstPrinter) VisitGroupingExpr(grouping *ast.Grouping) string {
+func (a *AstPrinter) VisitGroupingExprString(grouping *ast.Grouping) string {
 	return a.parenthesize("group", grouping.Expression)
 }
 
-func (a *AstPrinter) VisitLiteralExpr(literal *ast.Literal) string {
+func (a *AstPrinter) VisitLiteralExprString(literal *ast.Literal) string {
 	if isNil(literal) {
 		return "nil"
 	}
 	return fmt.Sprintf("%v", literal.Value)
 }
 
-func (a *AstPrinter) VisitUnaryExpr(unary *ast.Unary) string {
+func (a *AstPrinter) VisitUnaryExprString(unary *ast.Unary) string {
 	return a.parenthesize(unary.Operator.Lexeme, unary.Right)
 }
 

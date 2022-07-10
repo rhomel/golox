@@ -109,12 +109,12 @@ type <Name> struct {
 
 func (*<Name>) is<baseName>() {}
 
-type <Name>Visitor interface {
-	Visit<Name><baseName>(*<Name>) string
+type <Name>StringVisitor interface {
+	Visit<Name><baseName>String(*<Name>) string
 }
 
-func (<lowercaseName> *<Name>) Accept(visitor <Name>Visitor) string {
-	return visitor.Visit<Name><baseName>(<lowercaseName>)
+func (<lowercaseName> *<Name>) AcceptString(visitor <Name>StringVisitor) string {
+	return visitor.Visit<Name><baseName>String(<lowercaseName>)
 }
 `
 
