@@ -90,7 +90,9 @@ func (l *Lox) run(line string) {
 	parser := parser.NewParser(tokens, l)
 	statements := parser.Parse()
 	//printAst(expr) // TODO: make a flag to enable printing the parsed ast
-	l.interpreter.Interpret(statements)
+	if !l.hadError {
+		l.interpreter.Interpret(statements)
+	}
 }
 
 func printAst(expr ast.Expr) {

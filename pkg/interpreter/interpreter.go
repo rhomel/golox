@@ -37,7 +37,9 @@ func (in *Interpreter) Interpret(statements []ast.Stmt) {
 		}
 	}()
 	for _, stmt := range statements {
-		in.execute(stmt)
+		if stmt != nil { // TODO: on parse errors a nil entry will be inserted
+			in.execute(stmt)
+		}
 	}
 }
 
