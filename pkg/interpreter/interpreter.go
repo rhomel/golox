@@ -2,7 +2,6 @@ package interpreter
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -52,6 +51,8 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 		return v.Accept(in)
 	case *ast.Literal:
 		return v.Accept(in)
+	case *ast.Logical:
+		return v.Accept(in)
 	case *ast.Unary:
 		return v.Accept(in)
 	case *ast.Variable:
@@ -59,7 +60,7 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 	case *ast.Assign:
 		return v.Accept(in)
 	default:
-		exit.Exitf(exit.ExitSyntaxError, "unsupported expression type: %s", reflect.TypeOf(elem).Name())
+		exit.Exitf(exit.ExitSyntaxError, "unsupported expression type: %s", check.TypeOf(elem))
 		return nil
 	}
 }
@@ -129,6 +130,24 @@ func (in *Interpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
 
 func (in *Interpreter) VisitLiteralExpr(literal *ast.Literal) interface{} {
 	return literal.Value
+}
+
+func (in *Interpreter) VisitLogicalExpr(logical *ast.Logical) interface{} {
+	left := in.evaluate(logical.Left)
+	leftIsTruthy := in.isTruthy(left)
+	switch logical.Operator.Typ {
+	case scanner.OR:
+		if leftIsTruthy {
+			return left
+		}
+	case scanner.AND:
+		if !leftIsTruthy {
+			return left
+		}
+	default:
+		panic(fmt.Sprintf("unsupported logical operator: %s", logical.Operator.Typ))
+	}
+	return in.evaluate(logical.Right)
 }
 
 func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {

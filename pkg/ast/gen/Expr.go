@@ -139,6 +139,40 @@ func (literal *Literal) Accept(visitor LiteralVisitor) interface{} {
 	return visitor.VisitLiteralExpr(literal)
 }
 
+var _ Expr = (*Logical)(nil)
+
+type Logical struct {
+	Left     Expr
+	Operator scanner.Token
+	Right    Expr
+}
+
+func (*Logical) isExpr() {}
+
+type LogicalStringVisitor interface {
+	VisitLogicalExprString(*Logical) string
+}
+
+func (logical *Logical) AcceptString(visitor LogicalStringVisitor) string {
+	return visitor.VisitLogicalExprString(logical)
+}
+
+type LogicalVoidVisitor interface {
+	VisitLogicalExprVoid(*Logical)
+}
+
+func (logical *Logical) AcceptVoid(visitor LogicalVoidVisitor) {
+	visitor.VisitLogicalExprVoid(logical)
+}
+
+type LogicalVisitor interface {
+	VisitLogicalExpr(*Logical) interface{}
+}
+
+func (logical *Logical) Accept(visitor LogicalVisitor) interface{} {
+	return visitor.VisitLogicalExpr(logical)
+}
+
 var _ Expr = (*Unary)(nil)
 
 type Unary struct {

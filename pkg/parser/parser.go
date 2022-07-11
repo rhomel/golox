@@ -5,10 +5,13 @@ package parser
 // ## grammar reference:
 //   [https://craftinginterpreters.com/parsing-expressions.html#ambiguity-and-the-parsing-game]
 //   [https://craftinginterpreters.com/statements-and-state.html#assignment-syntax]
+//   [https://craftinginterpreters.com/control-flow.html#logical-operators]
 //
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment
-//                | equality ;
+//                | logic_or ;
+// logic_or       → logic_and ( "or" logic_and )* ;
+// logic_and      → equality ( "and" equality )* ;
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 // term           → factor ( ( "-" | "+" ) factor )* ;
@@ -84,7 +87,7 @@ func (p *Parser) assignment() ast.Expr {
 	// ref: https://craftinginterpreters.com/statements-and-state.html#assignment-syntax
 	// assume there's an equality expression for now, even if it is an
 	// IDENTIFER it will be parsed as an IDENTIFIER
-	expr := p.equality()
+	expr := p.or()
 
 	// see if there's an EQUAL token
 	if p.match(scanner.EQUAL) {
@@ -98,6 +101,26 @@ func (p *Parser) assignment() ast.Expr {
 		p.err(equals, "Invalid assignment target.")
 	}
 	return expr
+}
+
+func (p *Parser) or() ast.Expr {
+	left := p.and()
+	for p.match(scanner.OR) {
+		operator := p.previous()
+		right := p.and()
+		return &ast.Logical{left, operator, right}
+	}
+	return left
+}
+
+func (p *Parser) and() ast.Expr {
+	left := p.equality()
+	for p.match(scanner.AND) {
+		operator := p.previous()
+		right := p.equality()
+		return &ast.Logical{left, operator, right}
+	}
+	return left
 }
 
 func (p *Parser) declaration() (stmt ast.Stmt) {
