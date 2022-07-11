@@ -40,6 +40,7 @@ func main() {
 	defineAST(outputDirectory, "Stmt", map[string]string{
 		"Block":      "Statements []Stmt",
 		"Expression": "Expression Expr",
+		"IfStmt":     "Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print":      "Expression Expr",
 		"VarStmt":    "Name scanner.Token, Initializer Expr",
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")

@@ -72,6 +72,40 @@ func (expression *Expression) Accept(visitor ExpressionVisitor) interface{} {
 	return visitor.VisitExpressionStmt(expression)
 }
 
+var _ Stmt = (*IfStmt)(nil)
+
+type IfStmt struct {
+	Condition  Expr
+	ThenBranch Stmt
+	ElseBranch Stmt
+}
+
+func (*IfStmt) isStmt() {}
+
+type IfStmtStringVisitor interface {
+	VisitIfStmtStmtString(*IfStmt) string
+}
+
+func (ifstmt *IfStmt) AcceptString(visitor IfStmtStringVisitor) string {
+	return visitor.VisitIfStmtStmtString(ifstmt)
+}
+
+type IfStmtVoidVisitor interface {
+	VisitIfStmtStmtVoid(*IfStmt)
+}
+
+func (ifstmt *IfStmt) AcceptVoid(visitor IfStmtVoidVisitor) {
+	visitor.VisitIfStmtStmtVoid(ifstmt)
+}
+
+type IfStmtVisitor interface {
+	VisitIfStmtStmt(*IfStmt) interface{}
+}
+
+func (ifstmt *IfStmt) Accept(visitor IfStmtVisitor) interface{} {
+	return visitor.VisitIfStmtStmt(ifstmt)
+}
+
 var _ Stmt = (*Print)(nil)
 
 type Print struct {

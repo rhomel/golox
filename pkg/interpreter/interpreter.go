@@ -212,6 +212,8 @@ func (in *Interpreter) evaluate(expr ast.Expr) interface{} {
 
 func (in *Interpreter) execute(stmt ast.Stmt) {
 	switch v := stmt.(type) {
+	case *ast.IfStmt:
+		v.AcceptVoid(in)
 	case *ast.Block:
 		v.AcceptVoid(in)
 	case *ast.Expression:
@@ -242,6 +244,17 @@ func (in *Interpreter) VisitBlockStmtVoid(block *ast.Block) {
 
 func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 	in.evaluate(stmt.Expression)
+}
+
+func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
+	condition := in.evaluate(stmt.Condition)
+	if in.isTruthy(condition) {
+		in.execute(stmt.ThenBranch)
+	} else {
+		if stmt.ElseBranch != nil {
+			in.execute(stmt.ElseBranch)
+		}
+	}
 }
 
 func (in *Interpreter) VisitPrintStmtVoid(stmt *ast.Print) {

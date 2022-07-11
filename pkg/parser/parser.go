@@ -32,10 +32,15 @@ package parser
 //
 // ## block syntax
 //   [https://craftinginterpreters.com/statements-and-state.html#block-syntax-and-semantics]
+// ## conditional
+//   [https://craftinginterpreters.com/control-flow.html#conditional-execution]
 // statement      → exprStmt
+//                | ifStmt ;
 //                | printStmt ;
 //                | block ;
 //
+// ifStmt         → "if" "(" expression ")" statement
+//                ( "else" statement )? ;
 // block          → "{" declaration* "}" ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
@@ -119,6 +124,9 @@ func (p *Parser) varDeclaration() ast.Stmt {
 }
 
 func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.IF) {
+		return p.ifStatement()
+	}
 	if p.match(scanner.PRINT) {
 		return p.printStatement()
 	}
@@ -126,6 +134,20 @@ func (p *Parser) statement() ast.Stmt {
 		return &ast.Block{p.block()}
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) ifStatement() ast.Stmt {
+	p.consume(scanner.LEFT_PAREN, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(scanner.RIGHT_PAREN, "Expect ')' after if condition.")
+
+	thenBranch := p.statement()
+	var elseBranch ast.Stmt
+	// greedily match 'else' token so it is always attached to the nearest 'if'
+	if p.match(scanner.ELSE) {
+		elseBranch = p.statement()
+	}
+	return &ast.IfStmt{condition, thenBranch, elseBranch}
 }
 
 func (p *Parser) printStatement() ast.Stmt {

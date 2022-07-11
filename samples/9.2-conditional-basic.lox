@@ -1,0 +1,8 @@
+if (1 == 1) {
+	print "Logic works!";
+}
+if (1 != 1) {
+	print "Logic has failed us!";
+} else {
+	print "And it works the other way too.";
+}
