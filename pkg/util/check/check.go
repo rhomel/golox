@@ -12,3 +12,13 @@ func IsNil(i interface{}) bool {
 	}
 	return false
 }
+
+func TypeOf(it interface{}) string {
+	typ := reflect.TypeOf(it)
+	switch typ.Kind() {
+	case reflect.Ptr:
+		return typ.Elem().Name()
+	default:
+		return typ.Name()
+	}
+}

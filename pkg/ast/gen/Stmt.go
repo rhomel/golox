@@ -8,6 +8,38 @@ type Stmt interface {
 	isStmt() // private method to tag which structs are Stmt
 }
 
+var _ Stmt = (*Block)(nil)
+
+type Block struct {
+	Statements []Stmt
+}
+
+func (*Block) isStmt() {}
+
+type BlockStringVisitor interface {
+	VisitBlockStmtString(*Block) string
+}
+
+func (block *Block) AcceptString(visitor BlockStringVisitor) string {
+	return visitor.VisitBlockStmtString(block)
+}
+
+type BlockVoidVisitor interface {
+	VisitBlockStmtVoid(*Block)
+}
+
+func (block *Block) AcceptVoid(visitor BlockVoidVisitor) {
+	visitor.VisitBlockStmtVoid(block)
+}
+
+type BlockVisitor interface {
+	VisitBlockStmt(*Block) interface{}
+}
+
+func (block *Block) Accept(visitor BlockVisitor) interface{} {
+	return visitor.VisitBlockStmt(block)
+}
+
 var _ Stmt = (*Expression)(nil)
 
 type Expression struct {

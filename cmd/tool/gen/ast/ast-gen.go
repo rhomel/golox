@@ -38,6 +38,7 @@ func main() {
 		"Assign":   "Name scanner.Token, Value Expr",
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
 	defineAST(outputDirectory, "Stmt", map[string]string{
+		"Block":      "Statements []Stmt",
 		"Expression": "Expression Expr",
 		"Print":      "Expression Expr",
 		"VarStmt":    "Name scanner.Token, Initializer Expr",

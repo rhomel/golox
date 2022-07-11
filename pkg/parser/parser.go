@@ -1,8 +1,8 @@
 package parser
 
-// recursive descent parser
+// # recursive descent parser
 //
-// grammar reference:
+// ## grammar reference:
 //   [https://craftinginterpreters.com/parsing-expressions.html#ambiguity-and-the-parsing-game]
 //   [https://craftinginterpreters.com/statements-and-state.html#assignment-syntax]
 //
@@ -19,7 +19,7 @@ package parser
 //                | "(" expression ")"
 //                | IDENTIFIER ;
 
-// statement rules
+// ## statement rules
 //   [https://craftinginterpreters.com/statements-and-state.html#statements]
 //   [https://craftinginterpreters.com/statements-and-state.html#variable-syntax]
 //
@@ -30,9 +30,13 @@ package parser
 //
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 //
+// ## block syntax
+//   [https://craftinginterpreters.com/statements-and-state.html#block-syntax-and-semantics]
 // statement      → exprStmt
 //                | printStmt ;
+//                | block ;
 //
+// block          → "{" declaration* "}" ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
 
@@ -118,6 +122,9 @@ func (p *Parser) statement() ast.Stmt {
 	if p.match(scanner.PRINT) {
 		return p.printStatement()
 	}
+	if p.match(scanner.LEFT_BRACE) {
+		return &ast.Block{p.block()}
+	}
 	return p.expressionStatement()
 }
 
@@ -131,6 +138,15 @@ func (p *Parser) expressionStatement() ast.Stmt {
 	expr := p.expression()
 	p.consume(scanner.SEMICOLON, "Expect ';' after expression.")
 	return &ast.Expression{expr}
+}
+
+func (p *Parser) block() []ast.Stmt {
+	var statements []ast.Stmt
+	for !p.check(scanner.RIGHT_BRACE) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+	p.consume(scanner.RIGHT_BRACE, "Expect '}' after block.")
+	return statements
 }
 
 func (p *Parser) equality() ast.Expr {

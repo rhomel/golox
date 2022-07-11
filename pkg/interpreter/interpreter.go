@@ -212,6 +212,8 @@ func (in *Interpreter) evaluate(expr ast.Expr) interface{} {
 
 func (in *Interpreter) execute(stmt ast.Stmt) {
 	switch v := stmt.(type) {
+	case *ast.Block:
+		v.AcceptVoid(in)
 	case *ast.Expression:
 		v.AcceptVoid(in)
 	case *ast.Print:
@@ -219,8 +221,23 @@ func (in *Interpreter) execute(stmt ast.Stmt) {
 	case *ast.VarStmt:
 		v.AcceptVoid(in)
 	default:
-		exit.Exitf(exit.ExitSyntaxError, "unsupported statement: %s", reflect.TypeOf(stmt).Name())
+		exit.Exitf(exit.ExitSyntaxError, "unsupported statement: %s", check.TypeOf(stmt))
 	}
+}
+
+func (in *Interpreter) executeBlock(statements []ast.Stmt, environment *Environment) {
+	previous := in.environment // save the current environment scope before executing block scope
+	defer func() {
+		in.environment = previous
+	}()
+	in.environment = environment
+	for _, statement := range statements {
+		in.execute(statement)
+	}
+}
+
+func (in *Interpreter) VisitBlockStmtVoid(block *ast.Block) {
+	in.executeBlock(block.Statements, NewEnvironment(in.environment))
 }
 
 func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
