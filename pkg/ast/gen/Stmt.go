@@ -170,3 +170,36 @@ type VarStmtVisitor interface {
 func (varstmt *VarStmt) Accept(visitor VarStmtVisitor) interface{} {
 	return visitor.VisitVarStmtStmt(varstmt)
 }
+
+var _ Stmt = (*While)(nil)
+
+type While struct {
+	Condition Expr
+	Body      Stmt
+}
+
+func (*While) isStmt() {}
+
+type WhileStringVisitor interface {
+	VisitWhileStmtString(*While) string
+}
+
+func (while *While) AcceptString(visitor WhileStringVisitor) string {
+	return visitor.VisitWhileStmtString(while)
+}
+
+type WhileVoidVisitor interface {
+	VisitWhileStmtVoid(*While)
+}
+
+func (while *While) AcceptVoid(visitor WhileVoidVisitor) {
+	visitor.VisitWhileStmtVoid(while)
+}
+
+type WhileVisitor interface {
+	VisitWhileStmt(*While) interface{}
+}
+
+func (while *While) Accept(visitor WhileVisitor) interface{} {
+	return visitor.VisitWhileStmt(while)
+}

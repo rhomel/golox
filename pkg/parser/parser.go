@@ -37,11 +37,15 @@ package parser
 //   [https://craftinginterpreters.com/statements-and-state.html#block-syntax-and-semantics]
 // ## conditional
 //   [https://craftinginterpreters.com/control-flow.html#conditional-execution]
+// ## while loop
+//   [https://craftinginterpreters.com/control-flow.html#while-loops]
 // statement      → exprStmt
-//                | ifStmt ;
-//                | printStmt ;
+//                | ifStmt
+//                | printStmt
+//                | whileStmt
 //                | block ;
 //
+// whileStmt      → "while" "(" expression ")" statement
 // ifStmt         → "if" "(" expression ")" statement
 //                ( "else" statement )? ;
 // block          → "{" declaration* "}" ;
@@ -146,12 +150,23 @@ func (p *Parser) varDeclaration() ast.Stmt {
 	return &ast.VarStmt{identifier, initializer}
 }
 
+func (p *Parser) whileStatement() ast.Stmt {
+	p.consume(scanner.LEFT_PAREN, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(scanner.RIGHT_PAREN, "Expect ')' after if condition.")
+	body := p.statement()
+	return &ast.While{condition, body}
+}
+
 func (p *Parser) statement() ast.Stmt {
 	if p.match(scanner.IF) {
 		return p.ifStatement()
 	}
 	if p.match(scanner.PRINT) {
 		return p.printStatement()
+	}
+	if p.match(scanner.WHILE) {
+		return p.whileStatement()
 	}
 	if p.match(scanner.LEFT_BRACE) {
 		return &ast.Block{p.block()}

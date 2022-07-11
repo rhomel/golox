@@ -44,6 +44,7 @@ func main() {
 		"IfStmt":     "Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print":      "Expression Expr",
 		"VarStmt":    "Name scanner.Token, Initializer Expr",
+		"While":      "Condition Expr, Body Stmt",
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
 }
 

@@ -241,6 +241,8 @@ func (in *Interpreter) execute(stmt ast.Stmt) {
 		v.AcceptVoid(in)
 	case *ast.VarStmt:
 		v.AcceptVoid(in)
+	case *ast.While:
+		v.AcceptVoid(in)
 	default:
 		exit.Exitf(exit.ExitSyntaxError, "unsupported statement: %s", check.TypeOf(stmt))
 	}
@@ -287,6 +289,12 @@ func (in *Interpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
 		value = in.evaluate(stmt.Initializer)
 	}
 	in.environment.Define(stmt.Name.Lexeme, value)
+}
+
+func (in *Interpreter) VisitWhileStmtVoid(while *ast.While) {
+	for in.isTruthy(in.evaluate(while.Condition)) {
+		in.execute(while.Body)
+	}
 }
 
 func (in *Interpreter) VisitAssignExpr(assign *ast.Assign) interface{} {
