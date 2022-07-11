@@ -39,12 +39,18 @@ package parser
 //   [https://craftinginterpreters.com/control-flow.html#conditional-execution]
 // ## while loop
 //   [https://craftinginterpreters.com/control-flow.html#while-loops]
+// ## for loop
+//   [https://craftinginterpreters.com/control-flow.html#for-loops]
 // statement      → exprStmt
+//                | forStmt
 //                | ifStmt
 //                | printStmt
 //                | whileStmt
 //                | block ;
 //
+// forStmt        → "for" "(" ( varDecl | expr Stmt | ";" )
+//                expression? ";"
+//                expression? ")" statement ;
 // whileStmt      → "while" "(" expression ")" statement
 // ifStmt         → "if" "(" expression ")" statement
 //                ( "else" statement )? ;
@@ -159,6 +165,9 @@ func (p *Parser) whileStatement() ast.Stmt {
 }
 
 func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.FOR) {
+		return p.forStatement()
+	}
 	if p.match(scanner.IF) {
 		return p.ifStatement()
 	}
@@ -172,6 +181,47 @@ func (p *Parser) statement() ast.Stmt {
 		return &ast.Block{p.block()}
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) forStatement() ast.Stmt {
+	p.consume(scanner.LEFT_PAREN, "Expect '(' after 'for'.")
+	var initializer ast.Stmt
+	if p.match(scanner.SEMICOLON) {
+		initializer = nil
+	} else if p.match(scanner.VAR) {
+		initializer = p.varDeclaration()
+	} else {
+		initializer = p.expressionStatement()
+	}
+	var condition ast.Expr
+	if !p.check(scanner.SEMICOLON) {
+		condition = p.expression()
+	}
+	p.consume(scanner.SEMICOLON, "Expect ';' after loop condition.")
+	var increment ast.Expr
+	if !p.check(scanner.RIGHT_PAREN) {
+		increment = p.expression()
+	}
+	p.consume(scanner.RIGHT_PAREN, "Expect ')' after for clauses.")
+	body := p.statement()
+
+	if increment != nil {
+		body = &ast.Block{
+			Statements: []ast.Stmt{
+				body,
+				&ast.Expression{increment},
+			},
+		}
+	}
+	if condition == nil {
+		condition = &ast.Literal{true}
+	}
+	body = &ast.While{condition, body}
+	if initializer != nil {
+		body = &ast.Block{[]ast.Stmt{initializer, body}}
+	}
+
+	return body
 }
 
 func (p *Parser) ifStatement() ast.Stmt {
