@@ -291,8 +291,9 @@ func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 	in.evaluate(stmt.Expression)
 }
 
-func (in *Interpreter) VisitFunctionStmtVoid(function *ast.Function) {
-	// TODO
+func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
+	function := NewLoxFunction(stmt)
+	in.environment.Define(stmt.Name.Lexeme, function)
 }
 
 func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
@@ -377,4 +378,31 @@ func (*nativeClock) Call(in *Interpreter, arguments []interface{}) interface{} {
 
 func (*nativeClock) String() string {
 	return "<native fn>"
+}
+
+type LoxFunction struct {
+	declaration *ast.Function
+}
+
+var _ LoxCallable = (*LoxFunction)(nil)
+
+func NewLoxFunction(declaration *ast.Function) *LoxFunction {
+	return &LoxFunction{declaration}
+}
+
+func (f *LoxFunction) Arity() int {
+	return len(f.declaration.Params)
+}
+
+func (f *LoxFunction) Call(in *Interpreter, arguments []interface{}) interface{} {
+	environment := NewEnvironment(in.globals)
+	for i := range f.declaration.Params {
+		environment.Define(f.declaration.Params[i].Lexeme, arguments[i])
+	}
+	in.executeBlock(f.declaration.Body, environment)
+	return nil
+}
+
+func (f *LoxFunction) String() string {
+	return "<fn " + f.declaration.Name.Lexeme + ">"
 }

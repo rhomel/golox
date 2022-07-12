@@ -1,0 +1,25 @@
+fun sayHi(first, last) {
+  print "Hi, " + first + " " + last + "!";
+}
+
+sayHi("Dear", "Reader");
+print "";
+
+var a = 1;
+fun add(b) {
+  print a+b;
+}
+
+print "add";
+add(1);
+add(2);
+print "";
+
+fun recursion(i) {
+  print i;
+  if (i > 1) {
+    recursion(i-1);
+  }
+}
+
+recursion(3);
