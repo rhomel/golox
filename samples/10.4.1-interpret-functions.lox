@@ -23,3 +23,5 @@ fun recursion(i) {
 }
 
 recursion(3);
+
+print recursion;

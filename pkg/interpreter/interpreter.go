@@ -238,6 +238,9 @@ func (in *Interpreter) stringify(it interface{}) string {
 	if str, ok := it.(string); ok {
 		return str
 	}
+	if str, ok := it.(fmt.Stringer); ok {
+		return str.String()
+	}
 	if b, ok := it.(bool); ok {
 		if b {
 			return "true"
