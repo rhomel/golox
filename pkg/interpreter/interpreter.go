@@ -263,6 +263,8 @@ func (in *Interpreter) execute(stmt ast.Stmt) {
 		v.AcceptVoid(in)
 	case *ast.Print:
 		v.AcceptVoid(in)
+	case *ast.ReturnStmt:
+		v.AcceptVoid(in)
 	case *ast.VarStmt:
 		v.AcceptVoid(in)
 	case *ast.While:
@@ -310,6 +312,14 @@ func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
 func (in *Interpreter) VisitPrintStmtVoid(stmt *ast.Print) {
 	value := in.evaluate(stmt.Expression)
 	fmt.Println(in.stringify(value))
+}
+
+func (in *Interpreter) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
+	var value interface{}
+	if stmt.Value != nil {
+		value = in.evaluate(stmt.Value)
+	}
+	panic(&Return{value})
 }
 
 func (in *Interpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
@@ -394,15 +404,28 @@ func (f *LoxFunction) Arity() int {
 	return len(f.declaration.Params)
 }
 
-func (f *LoxFunction) Call(in *Interpreter, arguments []interface{}) interface{} {
+func (f *LoxFunction) Call(in *Interpreter, arguments []interface{}) (ret interface{}) {
 	environment := NewEnvironment(in.globals)
 	for i := range f.declaration.Params {
 		environment.Define(f.declaration.Params[i].Lexeme, arguments[i])
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			if re, ok := r.(*Return); ok {
+				ret = re.value
+			} else {
+				panic(r)
+			}
+		}
+	}()
 	in.executeBlock(f.declaration.Body, environment)
 	return nil
 }
 
 func (f *LoxFunction) String() string {
 	return "<fn " + f.declaration.Name.Lexeme + ">"
+}
+
+type Return struct {
+	value interface{}
 }

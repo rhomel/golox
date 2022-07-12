@@ -45,6 +45,7 @@ func main() {
 		"Function":   "Name scanner.Token, Params []scanner.Token, Body []Stmt",
 		"IfStmt":     "Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print":      "Expression Expr",
+		"ReturnStmt": "Keyword scanner.Token, Value Expr",
 		"VarStmt":    "Name scanner.Token, Initializer Expr",
 		"While":      "Condition Expr, Body Stmt",
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")

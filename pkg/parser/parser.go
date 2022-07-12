@@ -49,12 +49,17 @@ package parser
 //   [https://craftinginterpreters.com/control-flow.html#while-loops]
 // ## for loop
 //   [https://craftinginterpreters.com/control-flow.html#for-loops]
+// ## return statement
+//   [https://craftinginterpreters.com/functions.html#return-statements]
 // statement      → exprStmt
 //                | forStmt
 //                | ifStmt
 //                | printStmt
+//                | returnStmt
 //                | whileStmt
 //                | block ;
+//
+// returnStmt     → "return" expression? ";" ;
 //
 // forStmt        → "for" "(" ( varDecl | expr Stmt | ";" )
 //                expression? ";"
@@ -187,6 +192,9 @@ func (p *Parser) statement() ast.Stmt {
 	if p.match(scanner.PRINT) {
 		return p.printStatement()
 	}
+	if p.match(scanner.RETURN) {
+		return p.returnStatement()
+	}
 	if p.match(scanner.WHILE) {
 		return p.whileStatement()
 	}
@@ -255,6 +263,16 @@ func (p *Parser) printStatement() ast.Stmt {
 	expr := p.expression()
 	p.consume(scanner.SEMICOLON, "Expect ';' after value.")
 	return &ast.Print{expr}
+}
+
+func (p *Parser) returnStatement() ast.Stmt {
+	keyword := p.previous()
+	var value ast.Expr
+	if !p.check(scanner.SEMICOLON) {
+		value = p.expression()
+	}
+	p.consume(scanner.SEMICOLON, "Expect ';' after return value.")
+	return &ast.ReturnStmt{keyword, value}
 }
 
 func (p *Parser) expressionStatement() ast.Stmt {

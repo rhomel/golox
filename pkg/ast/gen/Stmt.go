@@ -172,6 +172,39 @@ func (print *Print) Accept(visitor PrintVisitor) interface{} {
 	return visitor.VisitPrintStmt(print)
 }
 
+var _ Stmt = (*ReturnStmt)(nil)
+
+type ReturnStmt struct {
+	Keyword scanner.Token
+	Value   Expr
+}
+
+func (*ReturnStmt) isStmt() {}
+
+type ReturnStmtStringVisitor interface {
+	VisitReturnStmtStmtString(*ReturnStmt) string
+}
+
+func (returnstmt *ReturnStmt) AcceptString(visitor ReturnStmtStringVisitor) string {
+	return visitor.VisitReturnStmtStmtString(returnstmt)
+}
+
+type ReturnStmtVoidVisitor interface {
+	VisitReturnStmtStmtVoid(*ReturnStmt)
+}
+
+func (returnstmt *ReturnStmt) AcceptVoid(visitor ReturnStmtVoidVisitor) {
+	visitor.VisitReturnStmtStmtVoid(returnstmt)
+}
+
+type ReturnStmtVisitor interface {
+	VisitReturnStmtStmt(*ReturnStmt) interface{}
+}
+
+func (returnstmt *ReturnStmt) Accept(visitor ReturnStmtVisitor) interface{} {
+	return visitor.VisitReturnStmtStmt(returnstmt)
+}
+
 var _ Stmt = (*VarStmt)(nil)
 
 type VarStmt struct {
