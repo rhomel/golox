@@ -1,0 +1,4 @@
+fun asdf() {
+  print "asdf";
+}
+print "can define functions";

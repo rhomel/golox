@@ -27,11 +27,17 @@ package parser
 // ## statement rules
 //   [https://craftinginterpreters.com/statements-and-state.html#statements]
 //   [https://craftinginterpreters.com/statements-and-state.html#variable-syntax]
+//   [https://craftinginterpreters.com/functions.html#function-declarations]
 //
 // program        → declaration* EOF ;
 //
-// declaration    → varDecl
+// declaration    → funDecl
+//                | varDecl
 //                | statement ;
+//
+// funDecl        → "fun" function ;
+// function       → IDENTIFIER "(" parameters? ")" block ;
+// parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
 //
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 //
@@ -61,6 +67,8 @@ package parser
 // printStmt      → "print" expression ";" ;
 
 import (
+	"fmt"
+
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
 )
@@ -142,6 +150,9 @@ func (p *Parser) declaration() (stmt ast.Stmt) {
 			stmt = nil
 		}
 	}()
+	if p.match(scanner.FUN) {
+		return p.function("function")
+	}
 	if p.match(scanner.VAR) {
 		return p.varDeclaration()
 	}
@@ -250,6 +261,25 @@ func (p *Parser) expressionStatement() ast.Stmt {
 	expr := p.expression()
 	p.consume(scanner.SEMICOLON, "Expect ';' after expression.")
 	return &ast.Expression{expr}
+}
+
+func (p *Parser) function(kind string) *ast.Function {
+	name := p.consume(scanner.IDENTIFIER, fmt.Sprintf("Expect %s name.", kind))
+	p.consume(scanner.LEFT_PAREN, fmt.Sprintf("Expect '(' after %s name.", kind))
+	var parameters []scanner.Token
+	if !p.check(scanner.RIGHT_PAREN) {
+		parameters = append(parameters, p.consume(scanner.IDENTIFIER, "Expect parameter name."))
+		for p.match(scanner.COMMA) {
+			if len(parameters) >= 255 {
+				p.err(p.peek(), "Can't have more than 255 parameters.")
+			}
+			parameters = append(parameters, p.consume(scanner.IDENTIFIER, "Expect parameter name."))
+		}
+	}
+	p.consume(scanner.RIGHT_PAREN, "Expect ')' after parameters.")
+	p.consume(scanner.LEFT_BRACE, fmt.Sprintf("Expect '{' before %s body.", kind))
+	body := p.block()
+	return &ast.Function{name, parameters, body}
 }
 
 func (p *Parser) block() []ast.Stmt {

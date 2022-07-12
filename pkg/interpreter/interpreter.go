@@ -259,6 +259,8 @@ func (in *Interpreter) execute(stmt ast.Stmt) {
 		v.AcceptVoid(in)
 	case *ast.Expression:
 		v.AcceptVoid(in)
+	case *ast.Function:
+		v.AcceptVoid(in)
 	case *ast.Print:
 		v.AcceptVoid(in)
 	case *ast.VarStmt:
@@ -287,6 +289,10 @@ func (in *Interpreter) VisitBlockStmtVoid(block *ast.Block) {
 
 func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 	in.evaluate(stmt.Expression)
+}
+
+func (in *Interpreter) VisitFunctionStmtVoid(function *ast.Function) {
+	// TODO
 }
 
 func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {

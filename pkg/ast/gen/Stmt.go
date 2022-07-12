@@ -72,6 +72,40 @@ func (expression *Expression) Accept(visitor ExpressionVisitor) interface{} {
 	return visitor.VisitExpressionStmt(expression)
 }
 
+var _ Stmt = (*Function)(nil)
+
+type Function struct {
+	Name   scanner.Token
+	Params []scanner.Token
+	Body   []Stmt
+}
+
+func (*Function) isStmt() {}
+
+type FunctionStringVisitor interface {
+	VisitFunctionStmtString(*Function) string
+}
+
+func (function *Function) AcceptString(visitor FunctionStringVisitor) string {
+	return visitor.VisitFunctionStmtString(function)
+}
+
+type FunctionVoidVisitor interface {
+	VisitFunctionStmtVoid(*Function)
+}
+
+func (function *Function) AcceptVoid(visitor FunctionVoidVisitor) {
+	visitor.VisitFunctionStmtVoid(function)
+}
+
+type FunctionVisitor interface {
+	VisitFunctionStmt(*Function) interface{}
+}
+
+func (function *Function) Accept(visitor FunctionVisitor) interface{} {
+	return visitor.VisitFunctionStmt(function)
+}
+
 var _ Stmt = (*IfStmt)(nil)
 
 type IfStmt struct {
