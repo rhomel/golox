@@ -297,7 +297,7 @@ func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 }
 
 func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
-	function := NewLoxFunction(stmt)
+	function := NewLoxFunction(stmt, in.environment)
 	in.environment.Define(stmt.Name.Lexeme, function)
 }
 
@@ -395,12 +395,13 @@ func (*nativeClock) String() string {
 
 type LoxFunction struct {
 	declaration *ast.Function
+	closure     *Environment
 }
 
 var _ LoxCallable = (*LoxFunction)(nil)
 
-func NewLoxFunction(declaration *ast.Function) *LoxFunction {
-	return &LoxFunction{declaration}
+func NewLoxFunction(declaration *ast.Function, closure *Environment) *LoxFunction {
+	return &LoxFunction{declaration, closure}
 }
 
 func (f *LoxFunction) Arity() int {
@@ -408,7 +409,7 @@ func (f *LoxFunction) Arity() int {
 }
 
 func (f *LoxFunction) Call(in *Interpreter, arguments []interface{}) (ret interface{}) {
-	environment := NewEnvironment(in.globals)
+	environment := NewEnvironment(f.closure)
 	for i := range f.declaration.Params {
 		environment.Define(f.declaration.Params[i].Lexeme, arguments[i])
 	}
