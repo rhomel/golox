@@ -75,6 +75,40 @@ func (binary *Binary) Accept(visitor BinaryVisitor) interface{} {
 	return visitor.VisitBinaryExpr(binary)
 }
 
+var _ Expr = (*Call)(nil)
+
+type Call struct {
+	Callee    Expr
+	Paren     scanner.Token
+	Arguments []Expr
+}
+
+func (*Call) isExpr() {}
+
+type CallStringVisitor interface {
+	VisitCallExprString(*Call) string
+}
+
+func (call *Call) AcceptString(visitor CallStringVisitor) string {
+	return visitor.VisitCallExprString(call)
+}
+
+type CallVoidVisitor interface {
+	VisitCallExprVoid(*Call)
+}
+
+func (call *Call) AcceptVoid(visitor CallVoidVisitor) {
+	visitor.VisitCallExprVoid(call)
+}
+
+type CallVisitor interface {
+	VisitCallExpr(*Call) interface{}
+}
+
+func (call *Call) Accept(visitor CallVisitor) interface{} {
+	return visitor.VisitCallExpr(call)
+}
+
 var _ Expr = (*Grouping)(nil)
 
 type Grouping struct {

@@ -6,6 +6,7 @@ package parser
 //   [https://craftinginterpreters.com/parsing-expressions.html#ambiguity-and-the-parsing-game]
 //   [https://craftinginterpreters.com/statements-and-state.html#assignment-syntax]
 //   [https://craftinginterpreters.com/control-flow.html#logical-operators]
+//   [https://craftinginterpreters.com/functions.html#function-calls]
 //
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment
@@ -16,8 +17,9 @@ package parser
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 // term           → factor ( ( "-" | "+" ) factor )* ;
 // factor         → unary ( ( "/" | "*" ) unary )* ;
-// unary          → ( "!" | "-" ) unary
-//                | primary ;
+// unary          → ( "!" | "-" ) unary | call ;
+// call           → primary ( "(" arguments? ")" )* ;
+// arguments      → expression ( "," expression )* ;
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")"
 //                | IDENTIFIER ;
@@ -305,7 +307,34 @@ func (p *Parser) unary() ast.Expr {
 		right := p.unary()
 		return &ast.Unary{operator, right}
 	}
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() ast.Expr {
+	expr := p.primary()
+	for {
+		if p.match(scanner.LEFT_PAREN) {
+			expr = p.finishCall(expr)
+		} else {
+			break
+		}
+	}
+	return expr
+}
+
+func (p *Parser) finishCall(callee ast.Expr) ast.Expr {
+	var arguments []ast.Expr
+	if !p.check(scanner.RIGHT_PAREN) {
+		arguments = append(arguments, p.expression())
+		for p.match(scanner.COMMA) {
+			if len(arguments) >= 255 {
+				p.err(p.peek(), "Can't have more than 255 arguments.")
+			}
+			arguments = append(arguments, p.expression())
+		}
+	}
+	paren := p.consume(scanner.RIGHT_PAREN, "Expect ')' after arguments.")
+	return &ast.Call{callee, paren, arguments}
 }
 
 func (p *Parser) primary() ast.Expr {

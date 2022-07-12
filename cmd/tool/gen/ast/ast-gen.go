@@ -31,6 +31,7 @@ func main() {
 	outputDirectory := args[0]
 	defineAST(outputDirectory, "Expr", map[string]string{
 		"Binary":   "Left Expr, Operator scanner.Token, Right Expr",
+		"Call":     "Callee Expr, Paren scanner.Token, Arguments []Expr",
 		"Grouping": "Expression Expr",
 		"Literal":  "Value interface{}",
 		"Logical":  "Left Expr, Operator scanner.Token, Right Expr",

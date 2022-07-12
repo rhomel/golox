@@ -1,0 +1,4 @@
+// call a native function
+print "Current time in seconds:";
+print clock();
+

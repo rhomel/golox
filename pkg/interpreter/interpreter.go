@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
@@ -13,6 +14,7 @@ import (
 
 type Interpreter struct {
 	reporter    RuntimeErrorReporter
+	globals     *Environment
 	environment *Environment
 }
 
@@ -21,7 +23,9 @@ type RuntimeErrorReporter interface {
 }
 
 func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
-	return &Interpreter{reporter, NewEnvironment(nil)}
+	globals := NewEnvironment(nil)
+	globals.Define("clock", &nativeClock{})
+	return &Interpreter{reporter, globals, globals}
 }
 
 func (in *Interpreter) Interpret(statements []ast.Stmt) {
@@ -46,6 +50,8 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 	// Go has no dynamic dispatch and inheritance so we have to resort to a type switch
 	switch v := elem.(type) {
 	case *ast.Binary:
+		return v.Accept(in)
+	case *ast.Call:
 		return v.Accept(in)
 	case *ast.Grouping:
 		return v.Accept(in)
@@ -122,6 +128,22 @@ func (in *Interpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
 		}
 	}
 	return nil // unreachable
+}
+
+func (in *Interpreter) VisitCallExpr(expr *ast.Call) interface{} {
+	callee := in.evaluate(expr.Callee)
+	var arguments []interface{}
+	for _, argument := range expr.Arguments {
+		arguments = append(arguments, in.evaluate(argument))
+	}
+	function, ok := callee.(LoxCallable)
+	if !ok {
+		panic(&RuntimeError{expr.Paren, "Can only call functions and classes."})
+	}
+	if expected, got := function.Arity(), len(arguments); expected != got {
+		panic(&RuntimeError{expr.Paren, fmt.Sprintf("Expected %d arguments but got %d.", expected, got)})
+	}
+	return function.Call(in, arguments)
 }
 
 func (in *Interpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
@@ -329,3 +351,24 @@ func (e *RuntimeError) Error() string {
 }
 
 var _ error = (*RuntimeError)(nil)
+
+type LoxCallable interface {
+	Call(*Interpreter, []interface{}) interface{}
+	Arity() int
+}
+
+type nativeClock struct{}
+
+var _ LoxCallable = (*nativeClock)(nil)
+
+func (*nativeClock) Arity() int {
+	return 0
+}
+
+func (*nativeClock) Call(in *Interpreter, arguments []interface{}) interface{} {
+	return (float64)(time.Now().Unix())
+}
+
+func (*nativeClock) String() string {
+	return "<native fn>"
+}
