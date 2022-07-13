@@ -16,6 +16,7 @@ type Interpreter struct {
 	reporter    RuntimeErrorReporter
 	globals     *Environment
 	environment *Environment
+	locals      map[ast.Expr]int
 }
 
 type RuntimeErrorReporter interface {
@@ -25,7 +26,7 @@ type RuntimeErrorReporter interface {
 func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
 	globals := NewEnvironment(nil)
 	globals.Define("clock", &nativeClock{})
-	return &Interpreter{reporter, globals, globals}
+	return &Interpreter{reporter, globals, globals, make(map[ast.Expr]int)}
 }
 
 func (in *Interpreter) Interpret(statements []ast.Stmt) {
@@ -186,7 +187,16 @@ func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
 }
 
 func (in *Interpreter) VisitVariableExpr(variable *ast.Variable) interface{} {
-	return in.environment.Get(variable.Name)
+	return in.lookUpVariable(variable.Name, variable)
+}
+
+func (in *Interpreter) lookUpVariable(name scanner.Token, expr ast.Expr) interface{} {
+	distance, ok := in.locals[expr]
+	if ok {
+		return in.environment.GetAt(distance, name.Lexeme)
+	} else {
+		return in.globals.Get(name)
+	}
 }
 
 func (in *Interpreter) checkNumberOperand(operator scanner.Token, operand interface{}) {
@@ -286,6 +296,10 @@ func (in *Interpreter) executeBlock(statements []ast.Stmt, environment *Environm
 	for _, statement := range statements {
 		in.execute(statement)
 	}
+}
+
+func (in *Interpreter) Resolve(expr ast.Expr, depth int) {
+	in.locals[expr] = depth
 }
 
 func (in *Interpreter) VisitBlockStmtVoid(block *ast.Block) {

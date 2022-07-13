@@ -32,6 +32,21 @@ func (e *Environment) Get(name scanner.Token) interface{} {
 	panic(&RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.Lexeme)})
 }
 
+func (e *Environment) GetAt(distance int, name string) interface{} {
+	if value, ok := e.ancestor(distance).values[name]; ok {
+		return value
+	}
+	panic(fmt.Errorf("Resolution data error: undefined ancestor at distance %d, name '%s'", distance, name))
+}
+
+func (e *Environment) ancestor(distance int) *Environment {
+	environment := e
+	for i := 0; i < distance; i++ {
+		environment = environment.enclosing
+	}
+	return environment
+}
+
 func (e *Environment) Assign(name scanner.Token, value interface{}) {
 	if _, ok := e.values[name.Lexeme]; ok {
 		e.values[name.Lexeme] = value
@@ -42,4 +57,8 @@ func (e *Environment) Assign(name scanner.Token, value interface{}) {
 		return
 	}
 	panic(&RuntimeError{name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme)})
+}
+
+func (e *Environment) AssignAt(distance int, name scanner.Token, value interface{}) {
+	e.ancestor(distance).values[name.Lexeme] = value
 }

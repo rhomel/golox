@@ -1,0 +1,245 @@
+package resolver
+
+import (
+	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
+	"rhomel.com/crafting-interpreters-go/pkg/interpreter"
+	"rhomel.com/crafting-interpreters-go/pkg/scanner"
+	"rhomel.com/crafting-interpreters-go/pkg/util/check"
+	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
+)
+
+type ErrorReporter interface {
+	ResolveError(token scanner.Token, message string)
+}
+
+type Resolver struct {
+	in       *interpreter.Interpreter
+	reporter ErrorReporter
+	scopes   *stack
+}
+
+func NewResolver(in *interpreter.Interpreter, reporter ErrorReporter) *Resolver {
+	return &Resolver{
+		in:       in,
+		reporter: reporter,
+		scopes:   &stack{},
+	}
+}
+
+func (re *Resolver) ResolveStmts(statements []ast.Stmt) {
+	for _, stmt := range statements {
+		re.resolve(stmt)
+	}
+}
+
+func (re *Resolver) resolve(elem interface{}) {
+	switch v := elem.(type) {
+	case *ast.Binary:
+		v.AcceptVoid(re)
+	case *ast.Call:
+		v.AcceptVoid(re)
+	case *ast.Grouping:
+		v.AcceptVoid(re)
+	case *ast.Literal:
+		v.AcceptVoid(re)
+	case *ast.Logical:
+		v.AcceptVoid(re)
+	case *ast.Unary:
+		v.AcceptVoid(re)
+	case *ast.Variable:
+		v.AcceptVoid(re)
+	case *ast.Assign:
+		v.AcceptVoid(re)
+	case *ast.IfStmt:
+		v.AcceptVoid(re)
+	case *ast.Block:
+		v.AcceptVoid(re)
+	case *ast.Expression:
+		v.AcceptVoid(re)
+	case *ast.Function:
+		v.AcceptVoid(re)
+	case *ast.Print:
+		v.AcceptVoid(re)
+	case *ast.ReturnStmt:
+		v.AcceptVoid(re)
+	case *ast.VarStmt:
+		v.AcceptVoid(re)
+	case *ast.While:
+		v.AcceptVoid(re)
+	default:
+		exit.Exitf(exit.ExitSyntaxError, "unsupported expression/statement: %s", check.TypeOf(elem))
+	}
+}
+
+func (re *Resolver) resolveLocal(expr ast.Expr, name scanner.Token) {
+	for i := re.scopes.size() - 1; i >= 0; i-- {
+		_, containsKey := re.scopes.get(i)[name.Lexeme]
+		if containsKey {
+			re.in.Resolve(expr, re.scopes.size()-1-i)
+			return
+		}
+	}
+}
+
+func (re *Resolver) resolveFunction(function *ast.Function) {
+	re.beginScope()
+	for _, param := range function.Params {
+		re.declare(param)
+		re.define(param)
+	}
+	re.ResolveStmts(function.Body)
+	re.endScope()
+}
+
+func (re *Resolver) beginScope() {
+	re.scopes.push(make(map[string]bool))
+}
+
+func (re *Resolver) endScope() {
+	re.scopes.pop()
+}
+
+func (re *Resolver) declare(name scanner.Token) {
+	if re.scopes.isEmpty() {
+		return
+	}
+	scope := re.scopes.peek()
+	scope[name.Lexeme] = false
+}
+
+func (re *Resolver) define(name scanner.Token) {
+	if re.scopes.isEmpty() {
+		return
+	}
+	scope := re.scopes.peek()
+	scope[name.Lexeme] = true
+}
+
+func (re *Resolver) VisitBlockStmtVoid(block *ast.Block) {
+	re.beginScope()
+	re.ResolveStmts(block.Statements)
+	re.endScope()
+}
+
+func (re *Resolver) VisitExpressionStmtVoid(stmt *ast.Expression) {
+	re.resolve(stmt.Expression)
+}
+
+func (re *Resolver) VisitFunctionStmtVoid(stmt *ast.Function) {
+	re.declare(stmt.Name)
+	re.define(stmt.Name)
+	re.resolveFunction(stmt)
+}
+
+func (re *Resolver) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
+	re.resolve(stmt.Condition)
+	re.resolve(stmt.ThenBranch)
+	if stmt.ElseBranch != nil {
+		re.resolve(stmt.ElseBranch)
+	}
+}
+
+func (re *Resolver) VisitPrintStmtVoid(stmt *ast.Print) {
+	re.resolve(stmt.Expression)
+}
+
+func (re *Resolver) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
+	if stmt.Value != nil {
+		re.resolve(stmt.Value)
+	}
+}
+
+func (re *Resolver) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
+	re.declare(stmt.Name)
+	if stmt.Initializer != nil {
+		re.resolve(stmt.Initializer)
+	}
+	re.define(stmt.Name)
+}
+
+func (re *Resolver) VisitWhileStmtVoid(while *ast.While) {
+	re.resolve(while.Condition)
+	re.resolve(while.Body)
+}
+
+func (re *Resolver) VisitAssignExprVoid(assign *ast.Assign) {
+	re.resolve(assign.Value)
+	re.resolveLocal(assign, assign.Name)
+}
+
+func (re *Resolver) VisitBinaryExprVoid(binary *ast.Binary) {
+	re.resolve(binary.Left)
+	re.resolve(binary.Right)
+}
+
+func (re *Resolver) VisitCallExprVoid(expr *ast.Call) {
+	re.resolve(expr.Callee)
+	for _, arg := range expr.Arguments {
+		re.resolve(arg)
+	}
+}
+
+func (re *Resolver) VisitGroupingExprVoid(grouping *ast.Grouping) {
+	re.resolve(grouping.Expression)
+}
+
+func (re *Resolver) VisitLiteralExprVoid(literal *ast.Literal) {
+	// no-op
+}
+
+func (re *Resolver) VisitLogicalExprVoid(logical *ast.Logical) {
+	re.resolve(logical.Left)
+	re.resolve(logical.Right)
+}
+
+func (re *Resolver) VisitUnaryExprVoid(unary *ast.Unary) {
+	re.resolve(unary.Right)
+}
+
+func (re *Resolver) VisitVariableExprVoid(variable *ast.Variable) {
+	isEmpty := re.scopes.isEmpty()
+	v, ok := re.scopes.peek()[variable.Name.Lexeme]
+	if !isEmpty && v == false && ok {
+		re.reporter.ResolveError(variable.Name, "Can't read local variable in its own initializer.")
+	}
+	re.resolveLocal(variable, variable.Name)
+}
+
+type stack struct {
+	elems []map[string]bool
+}
+
+func (s *stack) size() int {
+	return len(s.elems)
+}
+
+func (s *stack) isEmpty() bool {
+	return s.size() == 0
+}
+
+func (s *stack) push(elem map[string]bool) {
+	s.elems = append(s.elems, elem)
+}
+
+func (s *stack) pop() map[string]bool {
+	if s.size() == 0 {
+		return nil
+	}
+	last := s.size() - 1
+	elem := s.elems[last]
+	s.elems = s.elems[0:last]
+	return elem
+}
+
+func (s *stack) peek() map[string]bool {
+	if s.size() == 0 {
+		return nil
+	}
+	last := s.size() - 1
+	return s.elems[last]
+}
+
+func (s *stack) get(i int) map[string]bool {
+	// TODO: check bounds
+	return s.elems[i]
+}

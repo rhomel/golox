@@ -1,0 +1,19 @@
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
+}
+// output with only chapter 10 implemented:
+//
+//   global
+//   block
+//
+// with chapter 11 semantic analysis:
+//
+//   global
+//   global

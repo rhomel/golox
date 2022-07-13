@@ -11,6 +11,7 @@ import (
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
 	"rhomel.com/crafting-interpreters-go/pkg/interpreter"
 	"rhomel.com/crafting-interpreters-go/pkg/parser"
+	"rhomel.com/crafting-interpreters-go/pkg/resolver"
 	"rhomel.com/crafting-interpreters-go/pkg/scanner"
 	"rhomel.com/crafting-interpreters-go/pkg/util/ast/printer"
 	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
@@ -90,9 +91,15 @@ func (l *Lox) run(line string) {
 	parser := parser.NewParser(tokens, l)
 	statements := parser.Parse()
 	//printAst(expr) // TODO: make a flag to enable printing the parsed ast
-	if !l.hadError {
-		l.interpreter.Interpret(statements)
+	if l.hadError {
+		return
 	}
+	resolver := resolver.NewResolver(l.interpreter, l)
+	resolver.ResolveStmts(statements)
+	if l.hadError {
+		return
+	}
+	l.interpreter.Interpret(statements)
 }
 
 func printAst(expr ast.Expr) {
@@ -121,6 +128,10 @@ func (l *Lox) ParseError(token scanner.Token, message string) {
 	} else {
 		l.report(token.Line, " at '"+token.Lexeme+"'", message)
 	}
+}
+
+func (l *Lox) ResolveError(token scanner.Token, message string) {
+	l.ParseError(token, message)
 }
 
 func (l *Lox) RuntimeError(token scanner.Token, message string) {
