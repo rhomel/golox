@@ -12,17 +12,26 @@ type ErrorReporter interface {
 	ResolveError(token scanner.Token, message string)
 }
 
+type FunctionType int
+
+const (
+	NONE     FunctionType = 0
+	FUNCTION FunctionType = 1
+)
+
 type Resolver struct {
-	in       *interpreter.Interpreter
-	reporter ErrorReporter
-	scopes   *stack
+	in              *interpreter.Interpreter
+	reporter        ErrorReporter
+	scopes          *stack
+	currentFunction FunctionType
 }
 
 func NewResolver(in *interpreter.Interpreter, reporter ErrorReporter) *Resolver {
 	return &Resolver{
-		in:       in,
-		reporter: reporter,
-		scopes:   &stack{},
+		in:              in,
+		reporter:        reporter,
+		scopes:          &stack{},
+		currentFunction: NONE,
 	}
 }
 
@@ -81,7 +90,9 @@ func (re *Resolver) resolveLocal(expr ast.Expr, name scanner.Token) {
 	}
 }
 
-func (re *Resolver) resolveFunction(function *ast.Function) {
+func (re *Resolver) resolveFunction(function *ast.Function, typ FunctionType) {
+	enclosingFunction := re.currentFunction
+	re.currentFunction = typ
 	re.beginScope()
 	for _, param := range function.Params {
 		re.declare(param)
@@ -89,6 +100,7 @@ func (re *Resolver) resolveFunction(function *ast.Function) {
 	}
 	re.ResolveStmts(function.Body)
 	re.endScope()
+	re.currentFunction = enclosingFunction
 }
 
 func (re *Resolver) beginScope() {
@@ -104,6 +116,9 @@ func (re *Resolver) declare(name scanner.Token) {
 		return
 	}
 	scope := re.scopes.peek()
+	if _, ok := scope[name.Lexeme]; ok {
+		re.reporter.ResolveError(name, "Already a variable with this name in this scope.")
+	}
 	scope[name.Lexeme] = false
 }
 
@@ -128,7 +143,7 @@ func (re *Resolver) VisitExpressionStmtVoid(stmt *ast.Expression) {
 func (re *Resolver) VisitFunctionStmtVoid(stmt *ast.Function) {
 	re.declare(stmt.Name)
 	re.define(stmt.Name)
-	re.resolveFunction(stmt)
+	re.resolveFunction(stmt, FUNCTION)
 }
 
 func (re *Resolver) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
@@ -144,6 +159,9 @@ func (re *Resolver) VisitPrintStmtVoid(stmt *ast.Print) {
 }
 
 func (re *Resolver) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
+	if re.currentFunction == NONE {
+		re.reporter.ResolveError(stmt.Keyword, "Can't return from top-level code.")
+	}
 	if stmt.Value != nil {
 		re.resolve(stmt.Value)
 	}
