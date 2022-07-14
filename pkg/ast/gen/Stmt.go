@@ -40,6 +40,39 @@ func (block *Block) Accept(visitor BlockVisitor) interface{} {
 	return visitor.VisitBlockStmt(block)
 }
 
+var _ Stmt = (*Class)(nil)
+
+type Class struct {
+	Name    scanner.Token
+	Methods []*Function
+}
+
+func (*Class) isStmt() {}
+
+type ClassStringVisitor interface {
+	VisitClassStmtString(*Class) string
+}
+
+func (class *Class) AcceptString(visitor ClassStringVisitor) string {
+	return visitor.VisitClassStmtString(class)
+}
+
+type ClassVoidVisitor interface {
+	VisitClassStmtVoid(*Class)
+}
+
+func (class *Class) AcceptVoid(visitor ClassVoidVisitor) {
+	visitor.VisitClassStmtVoid(class)
+}
+
+type ClassVisitor interface {
+	VisitClassStmt(*Class) interface{}
+}
+
+func (class *Class) Accept(visitor ClassVisitor) interface{} {
+	return visitor.VisitClassStmt(class)
+}
+
 var _ Stmt = (*Expression)(nil)
 
 type Expression struct {

@@ -41,6 +41,7 @@ func main() {
 	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
 	defineAST(outputDirectory, "Stmt", map[string]string{
 		"Block":      "Statements []Stmt",
+		"Class":      "Name scanner.Token, Methods []*Function",
 		"Expression": "Expression Expr",
 		"Function":   "Name scanner.Token, Params []scanner.Token, Body []Stmt",
 		"IfStmt":     "Condition Expr, ThenBranch Stmt, ElseBranch Stmt",

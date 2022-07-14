@@ -266,6 +266,8 @@ func (in *Interpreter) evaluate(expr ast.Expr) interface{} {
 
 func (in *Interpreter) execute(stmt ast.Stmt) {
 	switch v := stmt.(type) {
+	case *ast.Class:
+		v.AcceptVoid(in)
 	case *ast.IfStmt:
 		v.AcceptVoid(in)
 	case *ast.Block:
@@ -313,6 +315,12 @@ func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
 	function := NewLoxFunction(stmt, in.environment)
 	in.environment.Define(stmt.Name.Lexeme, function)
+}
+
+func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
+	in.environment.Define(class.Name.Lexeme, nil)
+	klass := NewLoxClass(class.Name.Lexeme)
+	in.environment.Assign(class.Name, klass)
 }
 
 func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
@@ -446,4 +454,16 @@ func (f *LoxFunction) String() string {
 
 type Return struct {
 	value interface{}
+}
+
+type LoxClass struct {
+	name string
+}
+
+func NewLoxClass(name string) *LoxClass {
+	return &LoxClass{name}
+}
+
+func (c *LoxClass) String() string {
+	return c.name
 }

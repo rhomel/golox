@@ -28,13 +28,16 @@ package parser
 //   [https://craftinginterpreters.com/statements-and-state.html#statements]
 //   [https://craftinginterpreters.com/statements-and-state.html#variable-syntax]
 //   [https://craftinginterpreters.com/functions.html#function-declarations]
+//   [https://craftinginterpreters.com/classes.html#class-declarations]
 //
 // program        → declaration* EOF ;
 //
-// declaration    → funDecl
+// declaration    → classDecl
+//                | funDecl
 //                | varDecl
 //                | statement ;
 //
+// classDecl      → "class" IDENTIFIER "{" function* "}" ;
 // funDecl        → "fun" function ;
 // function       → IDENTIFIER "(" parameters? ")" block ;
 // parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -155,6 +158,9 @@ func (p *Parser) declaration() (stmt ast.Stmt) {
 			stmt = nil
 		}
 	}()
+	if p.match(scanner.CLASS) {
+		return p.class()
+	}
 	if p.match(scanner.FUN) {
 		return p.function("function")
 	}
@@ -162,6 +168,17 @@ func (p *Parser) declaration() (stmt ast.Stmt) {
 		return p.varDeclaration()
 	}
 	return p.statement()
+}
+
+func (p *Parser) class() ast.Stmt {
+	name := p.consume(scanner.IDENTIFIER, "Expect class name.")
+	p.consume(scanner.LEFT_BRACE, "Expect '{' after class name.")
+	var functions []*ast.Function
+	for !p.check(scanner.RIGHT_BRACE) && !p.isAtEnd() {
+		functions = append(functions, p.function("method"))
+	}
+	p.consume(scanner.RIGHT_BRACE, "Expect '}' after class body.")
+	return &ast.Class{name, functions}
 }
 
 func (p *Parser) varDeclaration() ast.Stmt {

@@ -59,6 +59,8 @@ func (re *Resolver) resolve(elem interface{}) {
 		v.AcceptVoid(re)
 	case *ast.Assign:
 		v.AcceptVoid(re)
+	case *ast.Class:
+		v.AcceptVoid(re)
 	case *ast.IfStmt:
 		v.AcceptVoid(re)
 	case *ast.Block:
@@ -144,6 +146,11 @@ func (re *Resolver) VisitFunctionStmtVoid(stmt *ast.Function) {
 	re.declare(stmt.Name)
 	re.define(stmt.Name)
 	re.resolveFunction(stmt, FUNCTION)
+}
+
+func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
+	re.declare(class.Name)
+	re.define(class.Name)
 }
 
 func (re *Resolver) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
