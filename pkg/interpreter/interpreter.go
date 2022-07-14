@@ -460,10 +460,32 @@ type LoxClass struct {
 	name string
 }
 
+var _ LoxCallable = (*LoxClass)(nil)
+
 func NewLoxClass(name string) *LoxClass {
 	return &LoxClass{name}
 }
 
+func (c *LoxClass) Arity() int {
+	return 0
+}
+
+func (c *LoxClass) Call(*Interpreter, []interface{}) interface{} {
+	return NewLoxInstance(c)
+}
+
 func (c *LoxClass) String() string {
 	return c.name
+}
+
+type LoxInstance struct {
+	class *LoxClass
+}
+
+func NewLoxInstance(class *LoxClass) *LoxInstance {
+	return &LoxInstance{class}
+}
+
+func (i *LoxInstance) String() string {
+	return i.class.name + " instance"
 }
