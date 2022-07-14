@@ -47,11 +47,15 @@ func (re *Resolver) resolve(elem interface{}) {
 		v.AcceptVoid(re)
 	case *ast.Call:
 		v.AcceptVoid(re)
+	case *ast.Get:
+		v.AcceptVoid(re)
 	case *ast.Grouping:
 		v.AcceptVoid(re)
 	case *ast.Literal:
 		v.AcceptVoid(re)
 	case *ast.Logical:
+		v.AcceptVoid(re)
+	case *ast.Set:
 		v.AcceptVoid(re)
 	case *ast.Unary:
 		v.AcceptVoid(re)
@@ -204,6 +208,10 @@ func (re *Resolver) VisitCallExprVoid(expr *ast.Call) {
 	}
 }
 
+func (re *Resolver) VisitGetExprVoid(get *ast.Get) {
+	re.resolve(get.Object)
+}
+
 func (re *Resolver) VisitGroupingExprVoid(grouping *ast.Grouping) {
 	re.resolve(grouping.Expression)
 }
@@ -215,6 +223,11 @@ func (re *Resolver) VisitLiteralExprVoid(literal *ast.Literal) {
 func (re *Resolver) VisitLogicalExprVoid(logical *ast.Logical) {
 	re.resolve(logical.Left)
 	re.resolve(logical.Right)
+}
+
+func (re *Resolver) VisitSetExprVoid(set *ast.Set) {
+	re.resolve(set.Value)
+	re.resolve(set.Object)
 }
 
 func (re *Resolver) VisitUnaryExprVoid(unary *ast.Unary) {

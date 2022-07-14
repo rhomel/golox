@@ -54,11 +54,15 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 		return v.Accept(in)
 	case *ast.Call:
 		return v.Accept(in)
+	case *ast.Get:
+		return v.Accept(in)
 	case *ast.Grouping:
 		return v.Accept(in)
 	case *ast.Literal:
 		return v.Accept(in)
 	case *ast.Logical:
+		return v.Accept(in)
+	case *ast.Set:
 		return v.Accept(in)
 	case *ast.Unary:
 		return v.Accept(in)
@@ -147,6 +151,14 @@ func (in *Interpreter) VisitCallExpr(expr *ast.Call) interface{} {
 	return function.Call(in, arguments)
 }
 
+func (in *Interpreter) VisitGetExpr(get *ast.Get) interface{} {
+	object := in.evaluate(get.Object)
+	if instance, ok := object.(*LoxInstance); ok {
+		return instance.Get(get.Name)
+	}
+	panic(&RuntimeError{get.Name, "Only instances have properties."})
+}
+
 func (in *Interpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
 	return in.evaluate(grouping)
 }
@@ -171,6 +183,16 @@ func (in *Interpreter) VisitLogicalExpr(logical *ast.Logical) interface{} {
 		panic(fmt.Sprintf("unsupported logical operator: %s", logical.Operator.Typ))
 	}
 	return in.evaluate(logical.Right)
+}
+
+func (in *Interpreter) VisitSetExpr(set *ast.Set) interface{} {
+	object := in.evaluate(set.Object)
+	if instance, ok := object.(*LoxInstance); ok {
+		value := in.evaluate(set.Value)
+		instance.Set(set.Name, value)
+		return value
+	}
+	panic(&RuntimeError{set.Name, fmt.Sprintf("Only instances have fields. Identifier type: %s", check.TypeOf(object))})
 }
 
 func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
@@ -479,11 +501,23 @@ func (c *LoxClass) String() string {
 }
 
 type LoxInstance struct {
-	class *LoxClass
+	class  *LoxClass
+	fields map[string]interface{}
 }
 
 func NewLoxInstance(class *LoxClass) *LoxInstance {
-	return &LoxInstance{class}
+	return &LoxInstance{class, make(map[string]interface{})}
+}
+
+func (i *LoxInstance) Get(name scanner.Token) interface{} {
+	if field, ok := i.fields[name.Lexeme]; ok {
+		return field
+	}
+	panic(&RuntimeError{name, fmt.Sprintf("Undefined property '%s'.", name.Lexeme)})
+}
+
+func (i *LoxInstance) Set(name scanner.Token, value interface{}) {
+	i.fields[name.Lexeme] = value
 }
 
 func (i *LoxInstance) String() string {

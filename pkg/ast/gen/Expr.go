@@ -109,6 +109,39 @@ func (call *Call) Accept(visitor CallVisitor) interface{} {
 	return visitor.VisitCallExpr(call)
 }
 
+var _ Expr = (*Get)(nil)
+
+type Get struct {
+	Object Expr
+	Name   scanner.Token
+}
+
+func (*Get) isExpr() {}
+
+type GetStringVisitor interface {
+	VisitGetExprString(*Get) string
+}
+
+func (get *Get) AcceptString(visitor GetStringVisitor) string {
+	return visitor.VisitGetExprString(get)
+}
+
+type GetVoidVisitor interface {
+	VisitGetExprVoid(*Get)
+}
+
+func (get *Get) AcceptVoid(visitor GetVoidVisitor) {
+	visitor.VisitGetExprVoid(get)
+}
+
+type GetVisitor interface {
+	VisitGetExpr(*Get) interface{}
+}
+
+func (get *Get) Accept(visitor GetVisitor) interface{} {
+	return visitor.VisitGetExpr(get)
+}
+
 var _ Expr = (*Grouping)(nil)
 
 type Grouping struct {
@@ -205,6 +238,40 @@ type LogicalVisitor interface {
 
 func (logical *Logical) Accept(visitor LogicalVisitor) interface{} {
 	return visitor.VisitLogicalExpr(logical)
+}
+
+var _ Expr = (*Set)(nil)
+
+type Set struct {
+	Object Expr
+	Name   scanner.Token
+	Value  Expr
+}
+
+func (*Set) isExpr() {}
+
+type SetStringVisitor interface {
+	VisitSetExprString(*Set) string
+}
+
+func (set *Set) AcceptString(visitor SetStringVisitor) string {
+	return visitor.VisitSetExprString(set)
+}
+
+type SetVoidVisitor interface {
+	VisitSetExprVoid(*Set)
+}
+
+func (set *Set) AcceptVoid(visitor SetVoidVisitor) {
+	visitor.VisitSetExprVoid(set)
+}
+
+type SetVisitor interface {
+	VisitSetExpr(*Set) interface{}
+}
+
+func (set *Set) Accept(visitor SetVisitor) interface{} {
+	return visitor.VisitSetExpr(set)
 }
 
 var _ Expr = (*Unary)(nil)

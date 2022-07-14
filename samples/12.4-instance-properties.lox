@@ -1,0 +1,4 @@
+class Stuff {}
+var stuff = Stuff();
+stuff.foo = "bar";
+print "foo has " + stuff.foo;

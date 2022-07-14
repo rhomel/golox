@@ -17,7 +17,7 @@ func TypeOf(it interface{}) string {
 	typ := reflect.TypeOf(it)
 	switch typ.Kind() {
 	case reflect.Ptr:
-		return typ.Elem().Name()
+		return typ.Elem().Name() + " (ptr)"
 	default:
 		return typ.Name()
 	}

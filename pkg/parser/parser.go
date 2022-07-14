@@ -7,9 +7,10 @@ package parser
 //   [https://craftinginterpreters.com/statements-and-state.html#assignment-syntax]
 //   [https://craftinginterpreters.com/control-flow.html#logical-operators]
 //   [https://craftinginterpreters.com/functions.html#function-calls]
+//   [https://craftinginterpreters.com/classes.html#properties-on-instances]
 //
 // expression     → assignment ;
-// assignment     → IDENTIFIER "=" assignment
+// assignment     → ( call "." )? IDENTIFIER "=" assignment
 //                | logic_or ;
 // logic_or       → logic_and ( "or" logic_and )* ;
 // logic_and      → equality ( "and" equality )* ;
@@ -18,7 +19,7 @@ package parser
 // term           → factor ( ( "-" | "+" ) factor )* ;
 // factor         → unary ( ( "/" | "*" ) unary )* ;
 // unary          → ( "!" | "-" ) unary | call ;
-// call           → primary ( "(" arguments? ")" )* ;
+// call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 // arguments      → expression ( "," expression )* ;
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")"
@@ -125,6 +126,12 @@ func (p *Parser) assignment() ast.Expr {
 		if ok {
 			value := p.assignment()
 			return &ast.Assign{variable.Name, value}
+		}
+		// see if the matched expr was a instance.get expression
+		get, ok := expr.(*ast.Get)
+		if ok {
+			value := p.assignment()
+			return &ast.Set{get.Object, get.Name, value}
 		}
 		p.err(equals, "Invalid assignment target.")
 	}
@@ -380,6 +387,9 @@ func (p *Parser) call() ast.Expr {
 	for {
 		if p.match(scanner.LEFT_PAREN) {
 			expr = p.finishCall(expr)
+		} else if p.match(scanner.DOT) {
+			name := p.consume(scanner.IDENTIFIER, "Expect property name after '.'.")
+			expr = &ast.Get{expr, name}
 		} else {
 			break
 		}
