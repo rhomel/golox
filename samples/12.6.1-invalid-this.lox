@@ -1,0 +1,8 @@
+print this;
+
+fun notAMethod() {
+  print this;
+}
+// Should print:
+// [line 1] Error at 'this': Can't use 'this' outside of a class.
+// [line 4] Error at 'this': Can't use 'this' outside of a class.

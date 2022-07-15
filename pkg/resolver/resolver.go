@@ -20,11 +20,19 @@ const (
 	METHOD   FunctionType = 2
 )
 
+type ClassType int
+
+const (
+	NOCLASS ClassType = 0
+	CLASS   ClassType = 1
+)
+
 type Resolver struct {
 	in              *interpreter.Interpreter
 	reporter        ErrorReporter
 	scopes          *stack
 	currentFunction FunctionType
+	curentClass     ClassType
 }
 
 func NewResolver(in *interpreter.Interpreter, reporter ErrorReporter) *Resolver {
@@ -33,6 +41,7 @@ func NewResolver(in *interpreter.Interpreter, reporter ErrorReporter) *Resolver 
 		reporter:        reporter,
 		scopes:          &stack{},
 		currentFunction: NONE,
+		curentClass:     NOCLASS,
 	}
 }
 
@@ -156,6 +165,8 @@ func (re *Resolver) VisitFunctionStmtVoid(stmt *ast.Function) {
 }
 
 func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
+	enclosingClass := re.curentClass
+	re.curentClass = CLASS
 	re.declare(class.Name)
 	re.beginScope()
 	re.scopes.peek()["this"] = true
@@ -164,6 +175,7 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 	}
 	re.endScope()
 	re.define(class.Name)
+	re.curentClass = enclosingClass
 }
 
 func (re *Resolver) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
@@ -240,6 +252,10 @@ func (re *Resolver) VisitSetExprVoid(set *ast.Set) {
 }
 
 func (re *Resolver) VisitThisExprVoid(this *ast.This) {
+	if re.curentClass == NOCLASS {
+		re.reporter.ResolveError(this.Keyword, "Can't use 'this' outside of a class.")
+		return
+	}
 	re.resolveLocal(this, this.Keyword)
 }
 
