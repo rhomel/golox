@@ -15,9 +15,10 @@ type ErrorReporter interface {
 type FunctionType int
 
 const (
-	NONE     FunctionType = 0
-	FUNCTION FunctionType = 1
-	METHOD   FunctionType = 2
+	NONE        FunctionType = 0
+	FUNCTION    FunctionType = 1
+	INITIALIZER FunctionType = 2
+	METHOD      FunctionType = 3
 )
 
 type ClassType int
@@ -171,7 +172,11 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 	re.beginScope()
 	re.scopes.peek()["this"] = true
 	for _, method := range class.Methods {
-		re.resolveFunction(method, METHOD)
+		declaration := METHOD
+		if method.Name.Lexeme == "init" {
+			declaration = INITIALIZER
+		}
+		re.resolveFunction(method, declaration)
 	}
 	re.endScope()
 	re.define(class.Name)
@@ -195,6 +200,9 @@ func (re *Resolver) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
 		re.reporter.ResolveError(stmt.Keyword, "Can't return from top-level code.")
 	}
 	if stmt.Value != nil {
+		if re.currentFunction == INITIALIZER {
+			re.reporter.ResolveError(stmt.Keyword, "Can't return a value from an initializer.")
+		}
 		re.resolve(stmt.Value)
 	}
 }

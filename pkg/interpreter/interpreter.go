@@ -341,7 +341,7 @@ func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 }
 
 func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
-	function := NewLoxFunction(stmt, in.environment)
+	function := NewLoxFunction(stmt, in.environment, false)
 	in.environment.Define(stmt.Name.Lexeme, function)
 }
 
@@ -349,7 +349,8 @@ func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
 	in.environment.Define(class.Name.Lexeme, nil)
 	methods := make(map[string]*LoxFunction)
 	for _, method := range class.Methods {
-		function := NewLoxFunction(method, in.environment)
+		isInitializer := method.Name.Lexeme == "init"
+		function := NewLoxFunction(method, in.environment, isInitializer)
 		methods[method.Name.Lexeme] = function
 	}
 	klass := NewLoxClass(class.Name.Lexeme, methods)
@@ -449,14 +450,15 @@ func (*nativeClock) String() string {
 }
 
 type LoxFunction struct {
-	declaration *ast.Function
-	closure     *Environment
+	declaration   *ast.Function
+	closure       *Environment
+	isInitializer bool
 }
 
 var _ LoxCallable = (*LoxFunction)(nil)
 
-func NewLoxFunction(declaration *ast.Function, closure *Environment) *LoxFunction {
-	return &LoxFunction{declaration, closure}
+func NewLoxFunction(declaration *ast.Function, closure *Environment, isInitializer bool) *LoxFunction {
+	return &LoxFunction{declaration, closure, isInitializer}
 }
 
 func (f *LoxFunction) Arity() int {
@@ -478,6 +480,9 @@ func (f *LoxFunction) Call(in *Interpreter, arguments []interface{}) (ret interf
 		}
 	}()
 	in.executeBlock(f.declaration.Body, environment)
+	if f.isInitializer {
+		return f.closure.GetAt(0, "this")
+	}
 	return nil
 }
 
@@ -488,7 +493,7 @@ func (f *LoxFunction) String() string {
 func (f *LoxFunction) Bind(instance *LoxInstance) *LoxFunction {
 	environment := NewEnvironment(f.closure)
 	environment.Define("this", instance)
-	return NewLoxFunction(f.declaration, environment)
+	return NewLoxFunction(f.declaration, environment, f.isInitializer)
 }
 
 type Return struct {
