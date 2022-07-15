@@ -17,6 +17,7 @@ type FunctionType int
 const (
 	NONE     FunctionType = 0
 	FUNCTION FunctionType = 1
+	METHOD   FunctionType = 2
 )
 
 type Resolver struct {
@@ -154,6 +155,9 @@ func (re *Resolver) VisitFunctionStmtVoid(stmt *ast.Function) {
 
 func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 	re.declare(class.Name)
+	for _, method := range class.Methods {
+		re.resolveFunction(method, METHOD)
+	}
 	re.define(class.Name)
 }
 

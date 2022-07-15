@@ -341,7 +341,12 @@ func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
 
 func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
 	in.environment.Define(class.Name.Lexeme, nil)
-	klass := NewLoxClass(class.Name.Lexeme)
+	methods := make(map[string]*LoxFunction)
+	for _, method := range class.Methods {
+		function := NewLoxFunction(method, in.environment)
+		methods[method.Name.Lexeme] = function
+	}
+	klass := NewLoxClass(class.Name.Lexeme, methods)
 	in.environment.Assign(class.Name, klass)
 }
 
@@ -479,13 +484,14 @@ type Return struct {
 }
 
 type LoxClass struct {
-	name string
+	name    string
+	methods map[string]*LoxFunction
 }
 
 var _ LoxCallable = (*LoxClass)(nil)
 
-func NewLoxClass(name string) *LoxClass {
-	return &LoxClass{name}
+func NewLoxClass(name string, methods map[string]*LoxFunction) *LoxClass {
+	return &LoxClass{name, methods}
 }
 
 func (c *LoxClass) Arity() int {
@@ -500,6 +506,13 @@ func (c *LoxClass) String() string {
 	return c.name
 }
 
+func (c *LoxClass) FindMethod(name string) *LoxFunction {
+	if method, ok := c.methods[name]; ok {
+		return method
+	}
+	return nil
+}
+
 type LoxInstance struct {
 	class  *LoxClass
 	fields map[string]interface{}
@@ -512,6 +525,9 @@ func NewLoxInstance(class *LoxClass) *LoxInstance {
 func (i *LoxInstance) Get(name scanner.Token) interface{} {
 	if field, ok := i.fields[name.Lexeme]; ok {
 		return field
+	}
+	if method := i.class.FindMethod(name.Lexeme); method != nil {
+		return method
 	}
 	panic(&RuntimeError{name, fmt.Sprintf("Undefined property '%s'.", name.Lexeme)})
 }
