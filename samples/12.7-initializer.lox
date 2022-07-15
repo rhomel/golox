@@ -1,0 +1,8 @@
+class Beer {
+  init() {
+    print "pouring";
+  }
+}
+
+var beer = Beer();
+

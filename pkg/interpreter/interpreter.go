@@ -507,11 +507,20 @@ func NewLoxClass(name string, methods map[string]*LoxFunction) *LoxClass {
 }
 
 func (c *LoxClass) Arity() int {
-	return 0
+	initializer := c.FindMethod("init")
+	if initializer == nil {
+		return 0
+	}
+	return initializer.Arity()
 }
 
-func (c *LoxClass) Call(*Interpreter, []interface{}) interface{} {
-	return NewLoxInstance(c)
+func (c *LoxClass) Call(in *Interpreter, args []interface{}) interface{} {
+	instance := NewLoxInstance(c)
+	initializer := c.FindMethod("init")
+	if initializer != nil {
+		initializer.Bind(instance).Call(in, args)
+	}
+	return instance
 }
 
 func (c *LoxClass) String() string {
