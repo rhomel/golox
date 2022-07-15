@@ -425,6 +425,9 @@ func (p *Parser) primary() ast.Expr {
 	if p.match(scanner.NUMBER, scanner.STRING) {
 		return &ast.Literal{p.previous().Literal}
 	}
+	if p.match(scanner.THIS) {
+		return &ast.This{p.previous()}
+	}
 	if p.match(scanner.IDENTIFIER) {
 		name := p.previous()
 		return &ast.Variable{name}

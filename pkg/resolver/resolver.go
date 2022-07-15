@@ -58,6 +58,8 @@ func (re *Resolver) resolve(elem interface{}) {
 		v.AcceptVoid(re)
 	case *ast.Set:
 		v.AcceptVoid(re)
+	case *ast.This:
+		v.AcceptVoid(re)
 	case *ast.Unary:
 		v.AcceptVoid(re)
 	case *ast.Variable:
@@ -155,9 +157,12 @@ func (re *Resolver) VisitFunctionStmtVoid(stmt *ast.Function) {
 
 func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 	re.declare(class.Name)
+	re.beginScope()
+	re.scopes.peek()["this"] = true
 	for _, method := range class.Methods {
 		re.resolveFunction(method, METHOD)
 	}
+	re.endScope()
 	re.define(class.Name)
 }
 
@@ -232,6 +237,10 @@ func (re *Resolver) VisitLogicalExprVoid(logical *ast.Logical) {
 func (re *Resolver) VisitSetExprVoid(set *ast.Set) {
 	re.resolve(set.Value)
 	re.resolve(set.Object)
+}
+
+func (re *Resolver) VisitThisExprVoid(this *ast.This) {
+	re.resolveLocal(this, this.Keyword)
 }
 
 func (re *Resolver) VisitUnaryExprVoid(unary *ast.Unary) {

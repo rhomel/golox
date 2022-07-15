@@ -64,6 +64,8 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 		return v.Accept(in)
 	case *ast.Set:
 		return v.Accept(in)
+	case *ast.This:
+		return v.Accept(in)
 	case *ast.Unary:
 		return v.Accept(in)
 	case *ast.Variable:
@@ -193,6 +195,10 @@ func (in *Interpreter) VisitSetExpr(set *ast.Set) interface{} {
 		return value
 	}
 	panic(&RuntimeError{set.Name, fmt.Sprintf("Only instances have fields. Identifier type: %s", check.TypeOf(object))})
+}
+
+func (in *Interpreter) VisitThisExpr(this *ast.This) interface{} {
+	return in.lookUpVariable(this.Keyword, this)
 }
 
 func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
@@ -479,6 +485,12 @@ func (f *LoxFunction) String() string {
 	return "<fn " + f.declaration.Name.Lexeme + ">"
 }
 
+func (f *LoxFunction) Bind(instance *LoxInstance) *LoxFunction {
+	environment := NewEnvironment(f.closure)
+	environment.Define("this", instance)
+	return NewLoxFunction(f.declaration, environment)
+}
+
 type Return struct {
 	value interface{}
 }
@@ -527,7 +539,7 @@ func (i *LoxInstance) Get(name scanner.Token) interface{} {
 		return field
 	}
 	if method := i.class.FindMethod(name.Lexeme); method != nil {
-		return method
+		return method.Bind(i)
 	}
 	panic(&RuntimeError{name, fmt.Sprintf("Undefined property '%s'.", name.Lexeme)})
 }
