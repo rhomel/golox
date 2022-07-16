@@ -1,9 +1,23 @@
 
-# Go Lox Implementation from `Crafting Interpreters` 
+# golox: Lox Implementation in Go
 
-This is a work-in-progress interpreter for the Lox programming language as
-defined in 
+This is a complete interpreter for the Lox programming language as defined in
 [Crafting Interpreters](https://craftinginterpreters.com/a-tree-walk-interpreter.html).
+
+This implementation closely follows the described Java implementation.
+
+Notable differences:
+
+- The Java implementation utilizes Java Exceptions. Go does not have true
+  exceptions but Go panic/recover works well enough to model the same exception
+  use cases.
+- Java inheritance is also often used in the Java version when walking the AST
+  with the visitor pattern. In this implementation I use a Go type switch to
+  delegate to the proper struct type. The consequence is that after running the
+  AST generator, any new AST node type must be added to all type switches. If
+  you forget to do so, when the new node is encountered, the switch default
+  case will trigger and typically stop with an 'unsupported <ast node type>'
+  error.
 
 ## Commands
 

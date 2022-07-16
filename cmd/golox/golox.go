@@ -83,6 +83,7 @@ func (l *Lox) runFile(file string) {
 }
 
 func (l *Lox) runPrompt() {
+	fmt.Println("Welcome to golox REPL. Use ctrl+d to exit.")
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
