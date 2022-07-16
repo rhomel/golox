@@ -30,6 +30,7 @@ package parser
 //   [https://craftinginterpreters.com/statements-and-state.html#variable-syntax]
 //   [https://craftinginterpreters.com/functions.html#function-declarations]
 //   [https://craftinginterpreters.com/classes.html#class-declarations]
+//   [https://craftinginterpreters.com/inheritance.html#superclasses-and-subclasses]
 //
 // program        → declaration* EOF ;
 //
@@ -38,7 +39,7 @@ package parser
 //                | varDecl
 //                | statement ;
 //
-// classDecl      → "class" IDENTIFIER "{" function* "}" ;
+// classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
 // funDecl        → "fun" function ;
 // function       → IDENTIFIER "(" parameters? ")" block ;
 // parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
@@ -179,13 +180,18 @@ func (p *Parser) declaration() (stmt ast.Stmt) {
 
 func (p *Parser) class() ast.Stmt {
 	name := p.consume(scanner.IDENTIFIER, "Expect class name.")
+	var superclass *ast.Variable
+	if p.match(scanner.LESS) {
+		superclassName := p.consume(scanner.IDENTIFIER, "Expect superclass name.")
+		superclass = &ast.Variable{superclassName}
+	}
 	p.consume(scanner.LEFT_BRACE, "Expect '{' after class name.")
 	var functions []*ast.Function
 	for !p.check(scanner.RIGHT_BRACE) && !p.isAtEnd() {
 		functions = append(functions, p.function("method"))
 	}
 	p.consume(scanner.RIGHT_BRACE, "Expect '}' after class body.")
-	return &ast.Class{name, functions}
+	return &ast.Class{name, superclass, functions}
 }
 
 func (p *Parser) varDeclaration() ast.Stmt {

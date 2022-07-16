@@ -346,6 +346,15 @@ func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
 }
 
 func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
+	var superklass *LoxClass
+	if class.Superclass != nil {
+		superclass := in.evaluate(class.Superclass)
+		if v, ok := superclass.(*LoxClass); ok {
+			superklass = v
+		} else {
+			panic(&RuntimeError{class.Superclass.Name, "Superclass must be a class."})
+		}
+	}
 	in.environment.Define(class.Name.Lexeme, nil)
 	methods := make(map[string]*LoxFunction)
 	for _, method := range class.Methods {
@@ -353,7 +362,7 @@ func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
 		function := NewLoxFunction(method, in.environment, isInitializer)
 		methods[method.Name.Lexeme] = function
 	}
-	klass := NewLoxClass(class.Name.Lexeme, methods)
+	klass := NewLoxClass(class.Name.Lexeme, superklass, methods)
 	in.environment.Assign(class.Name, klass)
 }
 
@@ -501,14 +510,15 @@ type Return struct {
 }
 
 type LoxClass struct {
-	name    string
-	methods map[string]*LoxFunction
+	name       string
+	superclass *LoxClass
+	methods    map[string]*LoxFunction
 }
 
 var _ LoxCallable = (*LoxClass)(nil)
 
-func NewLoxClass(name string, methods map[string]*LoxFunction) *LoxClass {
-	return &LoxClass{name, methods}
+func NewLoxClass(name string, superclass *LoxClass, methods map[string]*LoxFunction) *LoxClass {
+	return &LoxClass{name, superclass, methods}
 }
 
 func (c *LoxClass) Arity() int {

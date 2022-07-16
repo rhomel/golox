@@ -169,6 +169,13 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 	enclosingClass := re.curentClass
 	re.curentClass = CLASS
 	re.declare(class.Name)
+	re.define(class.Name)
+	if class.Superclass != nil && class.Name.Lexeme == class.Superclass.Name.Lexeme {
+		re.reporter.ResolveError(class.Superclass.Name, "A class can't inherit from itself.")
+	}
+	if class.Superclass != nil {
+		re.resolve(class.Superclass)
+	}
 	re.beginScope()
 	re.scopes.peek()["this"] = true
 	for _, method := range class.Methods {
@@ -179,7 +186,6 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 		re.resolveFunction(method, declaration)
 	}
 	re.endScope()
-	re.define(class.Name)
 	re.curentClass = enclosingClass
 }
 

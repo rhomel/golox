@@ -43,8 +43,9 @@ func (block *Block) Accept(visitor BlockVisitor) interface{} {
 var _ Stmt = (*Class)(nil)
 
 type Class struct {
-	Name    scanner.Token
-	Methods []*Function
+	Name       scanner.Token
+	Superclass *Variable
+	Methods    []*Function
 }
 
 func (*Class) isStmt() {}
