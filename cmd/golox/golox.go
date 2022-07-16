@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime/pprof"
 
 	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
 	"rhomel.com/crafting-interpreters-go/pkg/interpreter"
@@ -22,13 +23,26 @@ func main() {
 	args := &Args{}
 	l := args.len()
 	switch {
-	case l > 1:
-		exit.Exitf(exit.ExitCodeUsageError, "usage: golox [file]")
+	case l > 2:
+		exit.Exitf(exit.ExitCodeUsageError, "usage: golox [file] [cpuprofile]")
 	case l == 1:
+		lox.runFile(args.get()[0])
+	case l == 2:
+		cleanup := profile(args.get()[1])
+		defer cleanup()
 		lox.runFile(args.get()[0])
 	default:
 		lox.runPrompt()
 	}
+}
+
+func profile(file string) func() {
+	f, err := os.Create(file)
+	if err != nil {
+		exit.Exitf(exit.ExitIOError, "failed to create file %s", file)
+	}
+	pprof.StartCPUProfile(f)
+	return pprof.StopCPUProfile
 }
 
 type Args struct{}
