@@ -22,5 +22,21 @@ utilize the new AST node types.
 
 ## REPL
 
+`go run cmd/golox/golox.go`
+
 Use `ctrl+d` to exit.
+
+## CPU Profile
+
+You can run the interpreter with cpu profiling enabled.
+
+Example:
+
+```
+# run `14-fib-bench.lox` file and output cpu profile to `cpuprofile`:
+go run cmd/golox/golox.go samples/14-fib-bench.lox cpuprofile
+
+# use pprof the examine `cpuprofile`
+go tool pprof cpuprofile
+```
 
