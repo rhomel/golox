@@ -21,9 +21,9 @@ package parser
 // unary          → ( "!" | "-" ) unary | call ;
 // call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 // arguments      → expression ( "," expression )* ;
-// primary        → NUMBER | STRING | "true" | "false" | "nil"
-//                | "(" expression ")"
-//                | IDENTIFIER ;
+// primary        → "true" | "false" | "nil" | "this"
+//                | NUMBER | STRING | IDENTIFIER | "(" expression ")"
+//                | "super" "." IDENTIFIER ;
 
 // ## statement rules
 //   [https://craftinginterpreters.com/statements-and-state.html#statements]
@@ -430,6 +430,12 @@ func (p *Parser) primary() ast.Expr {
 	}
 	if p.match(scanner.NUMBER, scanner.STRING) {
 		return &ast.Literal{p.previous().Literal}
+	}
+	if p.match(scanner.SUPER) {
+		keyword := p.previous()
+		p.consume(scanner.DOT, "Expect '.' after 'super'.")
+		method := p.consume(scanner.IDENTIFIER, "Expect superclass method name.")
+		return &ast.Super{keyword, method}
 	}
 	if p.match(scanner.THIS) {
 		return &ast.This{p.previous()}

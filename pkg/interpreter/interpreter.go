@@ -64,6 +64,8 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 		return v.Accept(in)
 	case *ast.Set:
 		return v.Accept(in)
+	case *ast.Super:
+		return v.Accept(in)
 	case *ast.This:
 		return v.Accept(in)
 	case *ast.Unary:
@@ -195,6 +197,26 @@ func (in *Interpreter) VisitSetExpr(set *ast.Set) interface{} {
 		return value
 	}
 	panic(&RuntimeError{set.Name, fmt.Sprintf("Only instances have fields. Identifier type: %s", check.TypeOf(object))})
+}
+
+func (in *Interpreter) VisitSuperExpr(super *ast.Super) interface{} {
+	distance, ok := in.locals[super]
+	if !ok {
+		panic(&RuntimeError{super.Keyword, "no resolved local"})
+	}
+	superclass, ok := in.environment.GetAt(distance, "super").(*LoxClass)
+	if !ok {
+		panic(&RuntimeError{super.Keyword, "didn't find super class"})
+	}
+	object, ok := in.environment.GetAt(distance-1, "this").(*LoxInstance)
+	if !ok {
+		panic(&RuntimeError{super.Keyword, "didn't find super class instance"})
+	}
+	method := superclass.FindMethod(super.Method.Lexeme)
+	if method == nil {
+		panic(&RuntimeError{super.Method, fmt.Sprintf("Undefined property '%s'.", super.Method.Lexeme)})
+	}
+	return method.Bind(object)
 }
 
 func (in *Interpreter) VisitThisExpr(this *ast.This) interface{} {
@@ -356,6 +378,10 @@ func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
 		}
 	}
 	in.environment.Define(class.Name.Lexeme, nil)
+	if class.Superclass != nil {
+		in.environment = NewEnvironment(in.environment)
+		in.environment.Define("super", superklass)
+	}
 	methods := make(map[string]*LoxFunction)
 	for _, method := range class.Methods {
 		isInitializer := method.Name.Lexeme == "init"
@@ -363,6 +389,9 @@ func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
 		methods[method.Name.Lexeme] = function
 	}
 	klass := NewLoxClass(class.Name.Lexeme, superklass, methods)
+	if superklass != nil {
+		in.environment = in.environment.enclosing
+	}
 	in.environment.Assign(class.Name, klass)
 }
 

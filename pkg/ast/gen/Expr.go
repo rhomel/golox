@@ -274,6 +274,39 @@ func (set *Set) Accept(visitor SetVisitor) interface{} {
 	return visitor.VisitSetExpr(set)
 }
 
+var _ Expr = (*Super)(nil)
+
+type Super struct {
+	Keyword scanner.Token
+	Method  scanner.Token
+}
+
+func (*Super) isExpr() {}
+
+type SuperStringVisitor interface {
+	VisitSuperExprString(*Super) string
+}
+
+func (super *Super) AcceptString(visitor SuperStringVisitor) string {
+	return visitor.VisitSuperExprString(super)
+}
+
+type SuperVoidVisitor interface {
+	VisitSuperExprVoid(*Super)
+}
+
+func (super *Super) AcceptVoid(visitor SuperVoidVisitor) {
+	visitor.VisitSuperExprVoid(super)
+}
+
+type SuperVisitor interface {
+	VisitSuperExpr(*Super) interface{}
+}
+
+func (super *Super) Accept(visitor SuperVisitor) interface{} {
+	return visitor.VisitSuperExpr(super)
+}
+
 var _ Expr = (*This)(nil)
 
 type This struct {

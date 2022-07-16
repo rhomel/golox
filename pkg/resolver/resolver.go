@@ -68,6 +68,8 @@ func (re *Resolver) resolve(elem interface{}) {
 		v.AcceptVoid(re)
 	case *ast.Set:
 		v.AcceptVoid(re)
+	case *ast.Super:
+		v.AcceptVoid(re)
 	case *ast.This:
 		v.AcceptVoid(re)
 	case *ast.Unary:
@@ -174,6 +176,8 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 		re.reporter.ResolveError(class.Superclass.Name, "A class can't inherit from itself.")
 	}
 	if class.Superclass != nil {
+		re.beginScope()
+		re.scopes.peek()["super"] = true
 		re.resolve(class.Superclass)
 	}
 	re.beginScope()
@@ -186,6 +190,9 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 		re.resolveFunction(method, declaration)
 	}
 	re.endScope()
+	if class.Superclass != nil {
+		re.endScope()
+	}
 	re.curentClass = enclosingClass
 }
 
@@ -263,6 +270,10 @@ func (re *Resolver) VisitLogicalExprVoid(logical *ast.Logical) {
 func (re *Resolver) VisitSetExprVoid(set *ast.Set) {
 	re.resolve(set.Value)
 	re.resolve(set.Object)
+}
+
+func (re *Resolver) VisitSuperExprVoid(super *ast.Super) {
+	re.resolveLocal(super, super.Keyword)
 }
 
 func (re *Resolver) VisitThisExprVoid(this *ast.This) {

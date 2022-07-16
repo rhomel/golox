@@ -37,6 +37,7 @@ func main() {
 		"Literal":  "Value interface{}",
 		"Logical":  "Left Expr, Operator scanner.Token, Right Expr",
 		"Set":      "Object Expr, Name scanner.Token, Value Expr",
+		"Super":    "Keyword scanner.Token, Method scanner.Token",
 		"This":     "Keyword scanner.Token",
 		"Unary":    "Operator scanner.Token, Right Expr",
 		"Variable": "Name scanner.Token",
