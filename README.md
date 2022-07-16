@@ -41,6 +41,13 @@ utilize the new AST node types. Otherwise you may get an `unsupported
 
 Use `ctrl+d` to exit.
 
+## Running Samples
+
+The `samples` directory has many samples from
+[Crafting Interpreters](https://craftinginterpreters.com/contents.html).
+
+You can run them like any other lox file: `go run cmd/golox/golox.go samples/hello.lox`
+
 ## CPU Profile
 
 You can run the interpreter with cpu profiling enabled.
