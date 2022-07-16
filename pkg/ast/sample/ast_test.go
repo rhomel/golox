@@ -1,6 +1,6 @@
 package ast_test
 
-import "rhomel.com/crafting-interpreters-go/pkg/scanner"
+import "github.com/rhomel/golox/pkg/scanner"
 
 // Manually created sample of code we want to generate with cmd/tool/gen/ast
 

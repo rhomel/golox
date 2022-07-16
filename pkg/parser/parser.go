@@ -79,8 +79,8 @@ package parser
 import (
 	"fmt"
 
-	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
-	"rhomel.com/crafting-interpreters-go/pkg/scanner"
+	ast "github.com/rhomel/golox/pkg/ast/gen"
+	"github.com/rhomel/golox/pkg/scanner"
 )
 
 type Parser struct {

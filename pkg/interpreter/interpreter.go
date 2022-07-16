@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
-	"rhomel.com/crafting-interpreters-go/pkg/scanner"
-	"rhomel.com/crafting-interpreters-go/pkg/util/check"
-	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
+	ast "github.com/rhomel/golox/pkg/ast/gen"
+	"github.com/rhomel/golox/pkg/scanner"
+	"github.com/rhomel/golox/pkg/util/check"
+	"github.com/rhomel/golox/pkg/util/exit"
 )
 
 type Interpreter struct {

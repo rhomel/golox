@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
+	"github.com/rhomel/golox/pkg/util/exit"
 )
 
 // ast.go code generator
@@ -42,7 +42,7 @@ func main() {
 		"Unary":    "Operator scanner.Token, Right Expr",
 		"Variable": "Name scanner.Token",
 		"Assign":   "Name scanner.Token, Value Expr",
-	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
+	}, "import \"github.com/rhomel/golox/pkg/scanner\"")
 	defineAST(outputDirectory, "Stmt", map[string]string{
 		"Block":      "Statements []Stmt",
 		"Class":      "Name scanner.Token, Superclass *Variable, Methods []*Function",
@@ -53,7 +53,7 @@ func main() {
 		"ReturnStmt": "Keyword scanner.Token, Value Expr",
 		"VarStmt":    "Name scanner.Token, Initializer Expr",
 		"While":      "Condition Expr, Body Stmt",
-	}, "import \"rhomel.com/crafting-interpreters-go/pkg/scanner\"")
+	}, "import \"github.com/rhomel/golox/pkg/scanner\"")
 }
 
 func defineAST(outputDirectory, baseName string, types map[string]string, imports string) {

@@ -9,13 +9,13 @@ import (
 	"os"
 	"runtime/pprof"
 
-	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
-	"rhomel.com/crafting-interpreters-go/pkg/interpreter"
-	"rhomel.com/crafting-interpreters-go/pkg/parser"
-	"rhomel.com/crafting-interpreters-go/pkg/resolver"
-	"rhomel.com/crafting-interpreters-go/pkg/scanner"
-	"rhomel.com/crafting-interpreters-go/pkg/util/ast/printer"
-	"rhomel.com/crafting-interpreters-go/pkg/util/exit"
+	ast "github.com/rhomel/golox/pkg/ast/gen"
+	"github.com/rhomel/golox/pkg/interpreter"
+	"github.com/rhomel/golox/pkg/parser"
+	"github.com/rhomel/golox/pkg/resolver"
+	"github.com/rhomel/golox/pkg/scanner"
+	"github.com/rhomel/golox/pkg/util/ast/printer"
+	"github.com/rhomel/golox/pkg/util/exit"
 )
 
 func main() {

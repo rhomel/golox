@@ -7,9 +7,9 @@ package main
 import (
 	"fmt"
 
-	ast "rhomel.com/crafting-interpreters-go/pkg/ast/gen"
-	"rhomel.com/crafting-interpreters-go/pkg/scanner"
-	"rhomel.com/crafting-interpreters-go/pkg/util/ast/printer"
+	ast "github.com/rhomel/golox/pkg/ast/gen"
+	"github.com/rhomel/golox/pkg/scanner"
+	"github.com/rhomel/golox/pkg/util/ast/printer"
 )
 
 func main() {

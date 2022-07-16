@@ -3,7 +3,7 @@ package interpreter
 import (
 	"fmt"
 
-	"rhomel.com/crafting-interpreters-go/pkg/scanner"
+	"github.com/rhomel/golox/pkg/scanner"
 )
 
 type Environment struct {

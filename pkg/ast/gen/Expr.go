@@ -2,7 +2,7 @@ package ast
 
 // GENERATED CODE from cmd/tool/gen/ast/ast-gen.go
 
-import "rhomel.com/crafting-interpreters-go/pkg/scanner"
+import "github.com/rhomel/golox/pkg/scanner"
 
 type Expr interface {
 	isExpr() // private method to tag which structs are Expr
