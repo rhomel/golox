@@ -62,3 +62,31 @@ go run cmd/golox/golox.go samples/14-fib-bench.lox cpuprofile
 go tool pprof cpuprofile
 ```
 
+## Benchmarks
+
+As expected the tree-walk interpreter is very slow.
+
+On a Macbook Air M1, `fib(35)` runs in:
+
+- golox: 17 seconds
+- go: 43 milliseconds
+
+Commands:
+
+```
+go run cmd/golox/golox.go samples/14-fib-bench.lox
+9227465
+17
+```
+
+```
+go run cmd/other/go-fib/main.go
+9227465
+43.213792ms
+```
+
+For comparison jlox in [Chunks of Bytecode](https://craftinginterpreters.com/chunks-of-bytecode.html)
+runs `fib(40)` in 72 seconds. golox runs `fib(40)` in 197 seconds and plain Go
+runs in 351ms on a Macbook Air M1. Since `fib(40)` takes too long to complete I
+left the samples at `fib(35)`.
+
