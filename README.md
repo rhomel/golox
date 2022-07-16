@@ -16,8 +16,8 @@ Notable differences:
   delegate to the proper struct type. The consequence is that after running the
   AST generator, any new AST node type must be added to all type switches. If
   you forget to do so, when the new node is encountered, the switch default
-  case will trigger and typically stop with an 'unsupported <ast node type>'
-  error.
+  case will trigger and typically stop with an 'unsupported *ast node type*'
+  panic.
 
 ## Commands
 
@@ -29,10 +29,11 @@ Notable differences:
 
 - To Generate AST node types: `go run cmd/tool/gen/ast/ast-gen.go pkg/ast/gen`
 
-`ast-gen.go` has defineAst method calls which determine what types to generate.
+`ast-gen.go` has the `defineAst` method that determines what types to generate.
 
 After generation you should probably update the parser and interpreter to
-utilize the new AST node types.
+utilize the new AST node types. Otherwise you may get an `unsupported
+*new node type*` panic.
 
 ## REPL
 
