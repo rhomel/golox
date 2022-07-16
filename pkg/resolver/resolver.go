@@ -24,8 +24,9 @@ const (
 type ClassType int
 
 const (
-	NOCLASS ClassType = 0
-	CLASS   ClassType = 1
+	NOCLASS  ClassType = 0
+	CLASS    ClassType = 1
+	SUBCLASS ClassType = 2
 )
 
 type Resolver struct {
@@ -176,6 +177,7 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 		re.reporter.ResolveError(class.Superclass.Name, "A class can't inherit from itself.")
 	}
 	if class.Superclass != nil {
+		re.curentClass = SUBCLASS
 		re.beginScope()
 		re.scopes.peek()["super"] = true
 		re.resolve(class.Superclass)
@@ -273,6 +275,11 @@ func (re *Resolver) VisitSetExprVoid(set *ast.Set) {
 }
 
 func (re *Resolver) VisitSuperExprVoid(super *ast.Super) {
+	if re.curentClass == NOCLASS {
+		re.reporter.ResolveError(super.Keyword, "Can't use 'super' outside of a class.")
+	} else if re.curentClass != SUBCLASS {
+		re.reporter.ResolveError(super.Keyword, "Can't use 'super' in a class with no superclass.")
+	}
 	re.resolveLocal(super, super.Keyword)
 }
 
