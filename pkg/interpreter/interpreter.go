@@ -546,6 +546,9 @@ func (c *LoxClass) FindMethod(name string) *LoxFunction {
 	if method, ok := c.methods[name]; ok {
 		return method
 	}
+	if c.superclass != nil {
+		return c.superclass.FindMethod(name)
+	}
 	return nil
 }
 
