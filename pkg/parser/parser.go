@@ -122,16 +122,13 @@ func (p *Parser) assignment() ast.Expr {
 	// see if there's an EQUAL token
 	if p.match(scanner.EQUAL) {
 		equals := p.previous()
-		// see if the matched expr was an IDENTIFIER
-		variable, ok := expr.(*ast.Variable)
-		if ok {
-			value := p.assignment()
+		value := p.assignment()
+
+		if variable, isVariable := expr.(*ast.Variable); isVariable {
+			// matched expr was an IDENTIFIER
 			return &ast.Assign{variable.Name, value}
-		}
-		// see if the matched expr was a instance.get expression
-		get, ok := expr.(*ast.Get)
-		if ok {
-			value := p.assignment()
+		} else if get, isGet := expr.(*ast.Get); isGet {
+			// matched expr was a instance.get expression
 			return &ast.Set{get.Object, get.Name, value}
 		}
 		p.err(equals, "Invalid assignment target.")
