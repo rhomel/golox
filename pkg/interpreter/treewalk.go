@@ -164,7 +164,7 @@ func (in *TreeWalkInterpreter) VisitGetExpr(get *ast.Get) interface{} {
 }
 
 func (in *TreeWalkInterpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
-	return in.evaluate(grouping)
+	return in.evaluate(grouping.Expression)
 }
 
 func (in *TreeWalkInterpreter) VisitLiteralExpr(literal *ast.Literal) interface{} {

@@ -137,23 +137,23 @@ func (p *Parser) assignment() ast.Expr {
 }
 
 func (p *Parser) or() ast.Expr {
-	left := p.and()
+	expr := p.and()
 	for p.match(scanner.OR) {
 		operator := p.previous()
 		right := p.and()
-		return &ast.Logical{left, operator, right}
+		expr = &ast.Logical{expr, operator, right}
 	}
-	return left
+	return expr
 }
 
 func (p *Parser) and() ast.Expr {
-	left := p.equality()
+	expr := p.equality()
 	for p.match(scanner.AND) {
 		operator := p.previous()
 		right := p.equality()
-		return &ast.Logical{left, operator, right}
+		expr = &ast.Logical{expr, operator, right}
 	}
-	return left
+	return expr
 }
 
 func (p *Parser) declaration() (stmt ast.Stmt) {
