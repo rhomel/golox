@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -290,7 +291,7 @@ func (in *TreeWalkInterpreter) stringify(it interface{}) string {
 		return "nil"
 	}
 	if double, ok := it.(float64); ok {
-		text := fmt.Sprintf("%f", double)
+		text := strconv.FormatFloat(double, 'f', -1, 64)
 		text = maybeInteger(text)
 		return text
 	}
