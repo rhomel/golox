@@ -19,11 +19,13 @@ type TreeWalkInterpreter struct {
 	locals      map[ast.Expr]int
 }
 
+var _ Interpreter = (*TreeWalkInterpreter)(nil)
+
 type RuntimeErrorReporter interface {
 	RuntimeError(token scanner.Token, message string)
 }
 
-func NewInterpreter(reporter RuntimeErrorReporter) *TreeWalkInterpreter {
+func NewTreeWalkInterpreter(reporter RuntimeErrorReporter) *TreeWalkInterpreter {
 	globals := NewEnvironment(nil)
 	globals.Define("clock", &nativeClock{})
 	return &TreeWalkInterpreter{reporter, globals, globals, make(map[ast.Expr]int)}
