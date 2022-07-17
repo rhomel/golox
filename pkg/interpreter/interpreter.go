@@ -12,7 +12,7 @@ import (
 	"github.com/rhomel/golox/pkg/util/exit"
 )
 
-type Interpreter struct {
+type TreeWalkInterpreter struct {
 	reporter    RuntimeErrorReporter
 	globals     *Environment
 	environment *Environment
@@ -23,13 +23,13 @@ type RuntimeErrorReporter interface {
 	RuntimeError(token scanner.Token, message string)
 }
 
-func NewInterpreter(reporter RuntimeErrorReporter) *Interpreter {
+func NewInterpreter(reporter RuntimeErrorReporter) *TreeWalkInterpreter {
 	globals := NewEnvironment(nil)
 	globals.Define("clock", &nativeClock{})
-	return &Interpreter{reporter, globals, globals, make(map[ast.Expr]int)}
+	return &TreeWalkInterpreter{reporter, globals, globals, make(map[ast.Expr]int)}
 }
 
-func (in *Interpreter) Interpret(statements []ast.Stmt) {
+func (in *TreeWalkInterpreter) Interpret(statements []ast.Stmt) {
 	defer func() {
 		if r := recover(); r != nil {
 			// TODO
@@ -47,7 +47,7 @@ func (in *Interpreter) Interpret(statements []ast.Stmt) {
 	}
 }
 
-func (in *Interpreter) Accept(elem interface{}) interface{} {
+func (in *TreeWalkInterpreter) Accept(elem interface{}) interface{} {
 	// Go has no dynamic dispatch and inheritance so we have to resort to a type switch
 	switch v := elem.(type) {
 	case *ast.Binary:
@@ -80,7 +80,7 @@ func (in *Interpreter) Accept(elem interface{}) interface{} {
 	}
 }
 
-func (in *Interpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
+func (in *TreeWalkInterpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
 	left := in.evaluate(binary.Left)
 	right := in.evaluate(binary.Right)
 
@@ -139,7 +139,7 @@ func (in *Interpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
 	return nil // unreachable
 }
 
-func (in *Interpreter) VisitCallExpr(expr *ast.Call) interface{} {
+func (in *TreeWalkInterpreter) VisitCallExpr(expr *ast.Call) interface{} {
 	callee := in.evaluate(expr.Callee)
 	var arguments []interface{}
 	for _, argument := range expr.Arguments {
@@ -155,7 +155,7 @@ func (in *Interpreter) VisitCallExpr(expr *ast.Call) interface{} {
 	return function.Call(in, arguments)
 }
 
-func (in *Interpreter) VisitGetExpr(get *ast.Get) interface{} {
+func (in *TreeWalkInterpreter) VisitGetExpr(get *ast.Get) interface{} {
 	object := in.evaluate(get.Object)
 	if instance, ok := object.(*LoxInstance); ok {
 		return instance.Get(get.Name)
@@ -163,15 +163,15 @@ func (in *Interpreter) VisitGetExpr(get *ast.Get) interface{} {
 	panic(&RuntimeError{get.Name, "Only instances have properties."})
 }
 
-func (in *Interpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
+func (in *TreeWalkInterpreter) VisitGroupingExpr(grouping *ast.Grouping) interface{} {
 	return in.evaluate(grouping)
 }
 
-func (in *Interpreter) VisitLiteralExpr(literal *ast.Literal) interface{} {
+func (in *TreeWalkInterpreter) VisitLiteralExpr(literal *ast.Literal) interface{} {
 	return literal.Value
 }
 
-func (in *Interpreter) VisitLogicalExpr(logical *ast.Logical) interface{} {
+func (in *TreeWalkInterpreter) VisitLogicalExpr(logical *ast.Logical) interface{} {
 	left := in.evaluate(logical.Left)
 	leftIsTruthy := in.isTruthy(left)
 	switch logical.Operator.Typ {
@@ -189,7 +189,7 @@ func (in *Interpreter) VisitLogicalExpr(logical *ast.Logical) interface{} {
 	return in.evaluate(logical.Right)
 }
 
-func (in *Interpreter) VisitSetExpr(set *ast.Set) interface{} {
+func (in *TreeWalkInterpreter) VisitSetExpr(set *ast.Set) interface{} {
 	object := in.evaluate(set.Object)
 	if instance, ok := object.(*LoxInstance); ok {
 		value := in.evaluate(set.Value)
@@ -199,7 +199,7 @@ func (in *Interpreter) VisitSetExpr(set *ast.Set) interface{} {
 	panic(&RuntimeError{set.Name, fmt.Sprintf("Only instances have fields. Identifier type: %s", check.TypeOf(object))})
 }
 
-func (in *Interpreter) VisitSuperExpr(super *ast.Super) interface{} {
+func (in *TreeWalkInterpreter) VisitSuperExpr(super *ast.Super) interface{} {
 	distance, ok := in.locals[super]
 	if !ok {
 		panic(&RuntimeError{super.Keyword, "no resolved local"})
@@ -219,11 +219,11 @@ func (in *Interpreter) VisitSuperExpr(super *ast.Super) interface{} {
 	return method.Bind(object)
 }
 
-func (in *Interpreter) VisitThisExpr(this *ast.This) interface{} {
+func (in *TreeWalkInterpreter) VisitThisExpr(this *ast.This) interface{} {
 	return in.lookUpVariable(this.Keyword, this)
 }
 
-func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
+func (in *TreeWalkInterpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
 	right := in.evaluate(unary.Right)
 
 	switch unary.Operator.Typ {
@@ -236,11 +236,11 @@ func (in *Interpreter) VisitUnaryExpr(unary *ast.Unary) interface{} {
 	return nil // unreachable
 }
 
-func (in *Interpreter) VisitVariableExpr(variable *ast.Variable) interface{} {
+func (in *TreeWalkInterpreter) VisitVariableExpr(variable *ast.Variable) interface{} {
 	return in.lookUpVariable(variable.Name, variable)
 }
 
-func (in *Interpreter) lookUpVariable(name scanner.Token, expr ast.Expr) interface{} {
+func (in *TreeWalkInterpreter) lookUpVariable(name scanner.Token, expr ast.Expr) interface{} {
 	distance, ok := in.locals[expr]
 	if ok {
 		return in.environment.GetAt(distance, name.Lexeme)
@@ -249,14 +249,14 @@ func (in *Interpreter) lookUpVariable(name scanner.Token, expr ast.Expr) interfa
 	}
 }
 
-func (in *Interpreter) checkNumberOperand(operator scanner.Token, operand interface{}) {
+func (in *TreeWalkInterpreter) checkNumberOperand(operator scanner.Token, operand interface{}) {
 	if _, ok := operand.(float64); ok {
 		return
 	}
 	panic(&RuntimeError{operator, "Operand must be a number."})
 }
 
-func (in *Interpreter) checkNumberOperands(operator scanner.Token, left, right interface{}) {
+func (in *TreeWalkInterpreter) checkNumberOperands(operator scanner.Token, left, right interface{}) {
 	_, leftOk := left.(float64)
 	_, rightOk := right.(float64)
 	if leftOk && rightOk {
@@ -266,7 +266,7 @@ func (in *Interpreter) checkNumberOperands(operator scanner.Token, left, right i
 }
 
 // isTruthy returns false only for 'nil' and the boolean value false
-func (in *Interpreter) isTruthy(it interface{}) bool {
+func (in *TreeWalkInterpreter) isTruthy(it interface{}) bool {
 	if check.IsNil(it) {
 		return false
 	}
@@ -276,7 +276,7 @@ func (in *Interpreter) isTruthy(it interface{}) bool {
 	return true
 }
 
-func (in *Interpreter) isEqual(a, b interface{}) bool {
+func (in *TreeWalkInterpreter) isEqual(a, b interface{}) bool {
 	if check.IsNil(a) && check.IsNil(b) {
 		return true
 	}
@@ -286,7 +286,7 @@ func (in *Interpreter) isEqual(a, b interface{}) bool {
 	return a == b // TODO: will this work?
 }
 
-func (in *Interpreter) stringify(it interface{}) string {
+func (in *TreeWalkInterpreter) stringify(it interface{}) string {
 	if check.IsNil(it) {
 		return "nil"
 	}
@@ -310,11 +310,11 @@ func (in *Interpreter) stringify(it interface{}) string {
 	panic(fmt.Sprintf("unhandled type in stringify: %v", it)) // TODO
 }
 
-func (in *Interpreter) evaluate(expr ast.Expr) interface{} {
+func (in *TreeWalkInterpreter) evaluate(expr ast.Expr) interface{} {
 	return in.Accept(expr)
 }
 
-func (in *Interpreter) execute(stmt ast.Stmt) {
+func (in *TreeWalkInterpreter) execute(stmt ast.Stmt) {
 	switch v := stmt.(type) {
 	case *ast.Class:
 		v.AcceptVoid(in)
@@ -339,7 +339,7 @@ func (in *Interpreter) execute(stmt ast.Stmt) {
 	}
 }
 
-func (in *Interpreter) executeBlock(statements []ast.Stmt, environment *Environment) {
+func (in *TreeWalkInterpreter) executeBlock(statements []ast.Stmt, environment *Environment) {
 	previous := in.environment // save the current environment scope before executing block scope
 	defer func() {
 		in.environment = previous
@@ -350,24 +350,24 @@ func (in *Interpreter) executeBlock(statements []ast.Stmt, environment *Environm
 	}
 }
 
-func (in *Interpreter) Resolve(expr ast.Expr, depth int) {
+func (in *TreeWalkInterpreter) Resolve(expr ast.Expr, depth int) {
 	in.locals[expr] = depth
 }
 
-func (in *Interpreter) VisitBlockStmtVoid(block *ast.Block) {
+func (in *TreeWalkInterpreter) VisitBlockStmtVoid(block *ast.Block) {
 	in.executeBlock(block.Statements, NewEnvironment(in.environment))
 }
 
-func (in *Interpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
+func (in *TreeWalkInterpreter) VisitExpressionStmtVoid(stmt *ast.Expression) {
 	in.evaluate(stmt.Expression)
 }
 
-func (in *Interpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
+func (in *TreeWalkInterpreter) VisitFunctionStmtVoid(stmt *ast.Function) {
 	function := NewLoxFunction(stmt, in.environment, false)
 	in.environment.Define(stmt.Name.Lexeme, function)
 }
 
-func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
+func (in *TreeWalkInterpreter) VisitClassStmtVoid(class *ast.Class) {
 	var superklass *LoxClass
 	if class.Superclass != nil {
 		superclass := in.evaluate(class.Superclass)
@@ -395,7 +395,7 @@ func (in *Interpreter) VisitClassStmtVoid(class *ast.Class) {
 	in.environment.Assign(class.Name, klass)
 }
 
-func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
+func (in *TreeWalkInterpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
 	condition := in.evaluate(stmt.Condition)
 	if in.isTruthy(condition) {
 		in.execute(stmt.ThenBranch)
@@ -406,12 +406,12 @@ func (in *Interpreter) VisitIfStmtStmtVoid(stmt *ast.IfStmt) {
 	}
 }
 
-func (in *Interpreter) VisitPrintStmtVoid(stmt *ast.Print) {
+func (in *TreeWalkInterpreter) VisitPrintStmtVoid(stmt *ast.Print) {
 	value := in.evaluate(stmt.Expression)
 	fmt.Println(in.stringify(value))
 }
 
-func (in *Interpreter) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
+func (in *TreeWalkInterpreter) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
 	var value interface{}
 	if stmt.Value != nil {
 		value = in.evaluate(stmt.Value)
@@ -419,7 +419,7 @@ func (in *Interpreter) VisitReturnStmtStmtVoid(stmt *ast.ReturnStmt) {
 	panic(&Return{value})
 }
 
-func (in *Interpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
+func (in *TreeWalkInterpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
 	var value interface{}
 	if stmt.Initializer != nil {
 		value = in.evaluate(stmt.Initializer)
@@ -427,13 +427,13 @@ func (in *Interpreter) VisitVarStmtStmtVoid(stmt *ast.VarStmt) {
 	in.environment.Define(stmt.Name.Lexeme, value)
 }
 
-func (in *Interpreter) VisitWhileStmtVoid(while *ast.While) {
+func (in *TreeWalkInterpreter) VisitWhileStmtVoid(while *ast.While) {
 	for in.isTruthy(in.evaluate(while.Condition)) {
 		in.execute(while.Body)
 	}
 }
 
-func (in *Interpreter) VisitAssignExpr(assign *ast.Assign) interface{} {
+func (in *TreeWalkInterpreter) VisitAssignExpr(assign *ast.Assign) interface{} {
 	value := in.evaluate(assign.Value)
 	in.environment.Assign(assign.Name, value)
 	return value
@@ -467,7 +467,7 @@ func (e *RuntimeError) Error() string {
 var _ error = (*RuntimeError)(nil)
 
 type LoxCallable interface {
-	Call(*Interpreter, []interface{}) interface{}
+	Call(*TreeWalkInterpreter, []interface{}) interface{}
 	Arity() int
 }
 
@@ -479,7 +479,7 @@ func (*nativeClock) Arity() int {
 	return 0
 }
 
-func (*nativeClock) Call(in *Interpreter, arguments []interface{}) interface{} {
+func (*nativeClock) Call(in *TreeWalkInterpreter, arguments []interface{}) interface{} {
 	return (float64)(time.Now().Unix())
 }
 
@@ -503,7 +503,7 @@ func (f *LoxFunction) Arity() int {
 	return len(f.declaration.Params)
 }
 
-func (f *LoxFunction) Call(in *Interpreter, arguments []interface{}) (ret interface{}) {
+func (f *LoxFunction) Call(in *TreeWalkInterpreter, arguments []interface{}) (ret interface{}) {
 	environment := NewEnvironment(f.closure)
 	for i := range f.declaration.Params {
 		environment.Define(f.declaration.Params[i].Lexeme, arguments[i])
@@ -558,7 +558,7 @@ func (c *LoxClass) Arity() int {
 	return initializer.Arity()
 }
 
-func (c *LoxClass) Call(in *Interpreter, args []interface{}) interface{} {
+func (c *LoxClass) Call(in *TreeWalkInterpreter, args []interface{}) interface{} {
 	instance := NewLoxInstance(c)
 	initializer := c.FindMethod("init")
 	if initializer != nil {

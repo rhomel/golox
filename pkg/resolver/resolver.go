@@ -30,14 +30,14 @@ const (
 )
 
 type Resolver struct {
-	in              *interpreter.Interpreter
+	in              *interpreter.TreeWalkInterpreter
 	reporter        ErrorReporter
 	scopes          *stack
 	currentFunction FunctionType
 	curentClass     ClassType
 }
 
-func NewResolver(in *interpreter.Interpreter, reporter ErrorReporter) *Resolver {
+func NewResolver(in *interpreter.TreeWalkInterpreter, reporter ErrorReporter) *Resolver {
 	return &Resolver{
 		in:              in,
 		reporter:        reporter,

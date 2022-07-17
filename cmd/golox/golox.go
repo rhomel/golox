@@ -59,7 +59,7 @@ type Lox struct {
 	hadError        bool
 	hadRuntimeError bool
 
-	interpreter *interpreter.Interpreter
+	interpreter *interpreter.TreeWalkInterpreter
 }
 
 func NewLox() *Lox {
