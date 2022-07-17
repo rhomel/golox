@@ -131,11 +131,8 @@ func (in *TreeWalkInterpreter) VisitBinaryExpr(binary *ast.Binary) interface{} {
 			// TODO: improve this to reference the actual token literal
 			panic(&RuntimeError{binary.Operator, fmt.Sprintf("Left operand '%s' is string but right operand '%f' is double.", leftString, rightDouble)})
 		}
-		if !leftIsDouble && !leftIsString {
-			panic(fmt.Sprintf("expected either double or string value for left expression: %v", left)) // TODO
-		}
-		if !rightIsDouble && !rightIsString {
-			panic(fmt.Sprintf("expected either double or string value for right expression: %v", right)) // TODO
+		if (!leftIsDouble && !leftIsString) || (!rightIsDouble && !rightIsString) {
+			panic(&RuntimeError{binary.Operator, "Operands must be two numbers or two strings."})
 		}
 	}
 	return nil // unreachable
