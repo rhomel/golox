@@ -193,7 +193,7 @@ func (s *Scanner) scanToken() {
 		} else if s.isAlpha(c) {
 			s.identifier()
 		} else {
-			s.reporter.Error(s.line, fmt.Sprintf("Unexpected character '%s'.", runeToReadableString(c)))
+			s.reporter.Error(s.line, "Unexpected character.")
 		}
 	}
 }
