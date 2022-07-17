@@ -198,7 +198,7 @@ func (in *TreeWalkInterpreter) VisitSetExpr(set *ast.Set) interface{} {
 		instance.Set(set.Name, value)
 		return value
 	}
-	panic(&RuntimeError{set.Name, fmt.Sprintf("Only instances have fields. Identifier type: %s", check.TypeOf(object))})
+	panic(&RuntimeError{set.Name, fmt.Sprintf("Only instances have fields.")})
 }
 
 func (in *TreeWalkInterpreter) VisitSuperExpr(super *ast.Super) interface{} {
@@ -264,7 +264,7 @@ func (in *TreeWalkInterpreter) checkNumberOperands(operator scanner.Token, left,
 	if leftOk && rightOk {
 		return
 	}
-	panic(&RuntimeError{operator, "Operands must be a numbers."})
+	panic(&RuntimeError{operator, "Operands must be numbers."})
 }
 
 // isTruthy returns false only for 'nil' and the boolean value false

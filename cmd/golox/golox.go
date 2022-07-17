@@ -124,7 +124,7 @@ func printAst(expr ast.Expr) {
 
 func printTokens(tokens []*scanner.Token) {
 	for _, token := range tokens {
-		fmt.Printf("line: %d, token: %s\n", token.Line, token.String())
+		fmt.Fprintf(os.Stderr, "line: %d, token: %s\n", token.Line, token.String())
 	}
 }
 
@@ -133,7 +133,7 @@ func (l *Lox) Error(line int, message string) {
 }
 
 func (l *Lox) report(line int, where, message string) {
-	fmt.Printf("[line %d] Error%s: %s\n", line, where, message)
+	fmt.Fprintf(os.Stderr, "[line %d] Error%s: %s\n", line, where, message)
 	l.hadError = true
 }
 
@@ -150,6 +150,6 @@ func (l *Lox) ResolveError(token scanner.Token, message string) {
 }
 
 func (l *Lox) RuntimeError(token scanner.Token, message string) {
-	fmt.Printf("%s\n[line %d]\n", message, token.Line)
+	fmt.Fprintf(os.Stderr, "%s\n[line %d]\n", message, token.Line)
 	l.hadRuntimeError = true
 }

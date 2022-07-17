@@ -29,7 +29,7 @@ func (e *Environment) Get(name scanner.Token) interface{} {
 	if e.enclosing != nil {
 		return e.enclosing.Get(name)
 	}
-	panic(&RuntimeError{name, fmt.Sprintf("Undefined variable '%s'", name.Lexeme)})
+	panic(&RuntimeError{name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme)})
 }
 
 func (e *Environment) GetAt(distance int, name string) interface{} {
