@@ -178,9 +178,9 @@ func (re *Resolver) VisitClassStmtVoid(class *ast.Class) {
 	}
 	if class.Superclass != nil {
 		re.curentClass = SUBCLASS
+		re.resolve(class.Superclass)
 		re.beginScope()
 		re.scopes.peek()["super"] = true
-		re.resolve(class.Superclass)
 	}
 	re.beginScope()
 	re.scopes.peek()["this"] = true
