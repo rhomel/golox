@@ -435,7 +435,12 @@ func (in *TreeWalkInterpreter) VisitWhileStmtVoid(while *ast.While) {
 
 func (in *TreeWalkInterpreter) VisitAssignExpr(assign *ast.Assign) interface{} {
 	value := in.evaluate(assign.Value)
-	in.environment.Assign(assign.Name, value)
+	distance, ok := in.locals[assign]
+	if ok {
+		in.environment.AssignAt(distance, assign.Name, value)
+	} else {
+		in.globals.Assign(assign.Name, value)
+	}
 	return value
 }
 

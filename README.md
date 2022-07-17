@@ -2,7 +2,7 @@
 # golox: Lox Implementation in Go
 
 **[Test suite](https://github.com/munificent/craftinginterpreters#testing-your-implementation)
-status: 220 tests passed. 10 tests failed.**
+status: 230 tests passed. 9 tests failed.**
 
 This is a complete interpreter for the Lox programming language as defined in
 [Crafting Interpreters](https://craftinginterpreters.com/a-tree-walk-interpreter.html).
