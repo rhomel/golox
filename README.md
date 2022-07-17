@@ -22,6 +22,14 @@ Notable differences:
   case will trigger and typically stop with an 'unsupported *ast node type*'
   panic.
 
+*Since this implementation passes the test suite, I am tagging this with
+'tree-walker-feature-complete' for future reference. I intend to do a
+few things from here that may deviate from the book:*
+
+- Expand base language functionality (array type, better IO support, AST printing, etc).
+- Implement a faster VM version.
+- Improve the REPL.
+
 ## Commands
 
 - Start REPL: `go run cmd/golox/golox.go`
