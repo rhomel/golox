@@ -511,7 +511,11 @@ func (f *LoxFunction) Call(in *TreeWalkInterpreter, arguments []interface{}) (re
 	defer func() {
 		if r := recover(); r != nil {
 			if re, ok := r.(*Return); ok {
-				ret = re.value
+				if f.isInitializer {
+					ret = f.closure.GetAt(0, "this")
+				} else {
+					ret = re.value
+				}
 			} else {
 				panic(r)
 			}
