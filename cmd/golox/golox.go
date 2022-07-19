@@ -17,20 +17,33 @@ import (
 	"github.com/rhomel/golox/pkg/scanner"
 	"github.com/rhomel/golox/pkg/util/ast/printer"
 	"github.com/rhomel/golox/pkg/util/exit"
+	"github.com/rhomel/golox/pkg/vm"
 )
 
 func main() {
+	implementation := flag.String("implementation", "treewalk", "interpreter implementation to use")
 	cpuProfileFile := flag.String("cpu-profile", "", "file to output cpu profile")
 	flag.Parse()
-	lox := NewLox()
 	args := newArgs()
+	switch *implementation {
+	case "treewalk":
+		treewalkMain(args, *cpuProfileFile)
+	case "vm":
+		vm.Main()
+	default:
+		exit.Exitf(exit.ExitCodeUsageError, fmt.Sprintf("%s is not a valid implementation flag value", *implementation))
+	}
+}
+
+func treewalkMain(args *Args, cpuProfileFile string) {
+	lox := NewLox()
 	l := args.len()
 	switch {
 	case l > 1:
 		exit.Exitf(exit.ExitCodeUsageError, "usage: golox <flags> [file]")
 	case l == 1:
-		if *cpuProfileFile != "" {
-			cleanup := profile(*cpuProfileFile)
+		if cpuProfileFile != "" {
+			cleanup := profile(cpuProfileFile)
 			defer cleanup()
 		}
 		lox.runFile(args.get()[0])
