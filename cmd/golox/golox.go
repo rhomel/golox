@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,17 +20,19 @@ import (
 )
 
 func main() {
+	cpuProfileFile := flag.String("cpu-profile", "", "file to output cpu profile")
+	flag.Parse()
 	lox := NewLox()
-	args := &Args{}
+	args := newArgs()
 	l := args.len()
 	switch {
-	case l > 2:
-		exit.Exitf(exit.ExitCodeUsageError, "usage: golox [file] [cpuprofile]")
+	case l > 1:
+		exit.Exitf(exit.ExitCodeUsageError, "usage: golox <flags> [file]")
 	case l == 1:
-		lox.runFile(args.get()[0])
-	case l == 2:
-		cleanup := profile(args.get()[1])
-		defer cleanup()
+		if *cpuProfileFile != "" {
+			cleanup := profile(*cpuProfileFile)
+			defer cleanup()
+		}
 		lox.runFile(args.get()[0])
 	default:
 		lox.runPrompt()
@@ -45,14 +48,20 @@ func profile(file string) func() {
 	return pprof.StopCPUProfile
 }
 
-type Args struct{}
+type Args struct {
+	args []string
+}
+
+func newArgs() *Args {
+	return &Args{flag.Args()}
+}
 
 func (a *Args) len() int {
-	return len(a.get())
+	return len(a.args)
 }
 
 func (a *Args) get() []string {
-	return os.Args[1:]
+	return a.args
 }
 
 type Lox struct {
