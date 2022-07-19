@@ -77,6 +77,22 @@ func run() InterpretResult {
 		case OP_CONSTANT:
 			constant := READ_CONSTANT()
 			push(constant)
+		case OP_ADD:
+			b := pop()
+			a := pop()
+			push(a + b)
+		case OP_SUBTRACT:
+			b := pop()
+			a := pop()
+			push(a - b)
+		case OP_MULTIPLY:
+			b := pop()
+			a := pop()
+			push(a * b)
+		case OP_DIVIDE:
+			b := pop()
+			a := pop()
+			push(a / b)
 		case OP_NEGATE:
 			push(-pop())
 		case OP_RETURN:
