@@ -4,6 +4,7 @@ import "fmt"
 
 const (
 	OP_CONSTANT uint8 = iota
+	OP_NEGATE
 	OP_RETURN
 )
 
@@ -55,6 +56,8 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 	switch instruction {
 	case OP_CONSTANT:
 		return constantInstruction("OP_CONSTANT", c, offset)
+	case OP_NEGATE:
+		return simpleInstruction("OP_NEGATE", offset)
 	case OP_RETURN:
 		return simpleInstruction("OP_RETURN", offset)
 	default:
