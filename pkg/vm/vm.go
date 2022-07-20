@@ -45,10 +45,9 @@ const (
 	INTERPRET_RUNTIME_ERROR
 )
 
-func interpret(chunk *Chunk) InterpretResult {
-	vm.Chunk = chunk
-	vm.Ip = 0
-	return run()
+func interpret(source string) InterpretResult {
+	compile(source)
+	return INTERPRET_OK
 }
 
 func run() InterpretResult {

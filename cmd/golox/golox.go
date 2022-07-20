@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime/pprof"
 
+	"github.com/rhomel/golox/pkg/args"
 	ast "github.com/rhomel/golox/pkg/ast/gen"
 	"github.com/rhomel/golox/pkg/interpreter"
 	"github.com/rhomel/golox/pkg/parser"
@@ -24,20 +25,20 @@ func main() {
 	implementation := flag.String("implementation", "treewalk", "interpreter implementation to use")
 	cpuProfileFile := flag.String("cpu-profile", "", "file to output cpu profile")
 	flag.Parse()
-	args := newArgs()
+	args := args.New()
 	switch *implementation {
 	case "treewalk":
 		treewalkMain(args, *cpuProfileFile)
 	case "vm":
-		vm.Main()
+		vm.Main(args)
 	default:
 		exit.Exitf(exit.ExitCodeUsageError, fmt.Sprintf("%s is not a valid implementation flag value", *implementation))
 	}
 }
 
-func treewalkMain(args *Args, cpuProfileFile string) {
+func treewalkMain(args *args.Args, cpuProfileFile string) {
 	lox := NewLox()
-	l := args.len()
+	l := args.Len()
 	switch {
 	case l > 1:
 		exit.Exitf(exit.ExitCodeUsageError, "usage: golox <flags> [file]")
@@ -46,7 +47,7 @@ func treewalkMain(args *Args, cpuProfileFile string) {
 			cleanup := profile(cpuProfileFile)
 			defer cleanup()
 		}
-		lox.runFile(args.get()[0])
+		lox.runFile(args.Get()[0])
 	default:
 		lox.runPrompt()
 	}
@@ -59,22 +60,6 @@ func profile(file string) func() {
 	}
 	pprof.StartCPUProfile(f)
 	return pprof.StopCPUProfile
-}
-
-type Args struct {
-	args []string
-}
-
-func newArgs() *Args {
-	return &Args{flag.Args()}
-}
-
-func (a *Args) len() int {
-	return len(a.args)
-}
-
-func (a *Args) get() []string {
-	return a.args
 }
 
 type Lox struct {
