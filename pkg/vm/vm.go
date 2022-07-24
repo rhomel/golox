@@ -46,8 +46,15 @@ const (
 )
 
 func interpret(source string) InterpretResult {
-	compile(source)
-	return INTERPRET_OK
+	chunk := InitChunk()
+	if !compile(source, chunk) {
+		return INTERPRET_COMPILE_ERROR
+	}
+	vm.Chunk = chunk
+	vm.Ip = 0
+
+	result := run()
+	return result
 }
 
 func run() InterpretResult {

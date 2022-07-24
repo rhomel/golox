@@ -1,5 +1,7 @@
 package vm
 
+import "fmt"
+
 type TokenType int
 
 const (
@@ -57,6 +59,99 @@ type Token struct {
 
 	// only applies to TOKEN_ERROR
 	Error string
+}
+
+func (t Token) StartAsString(source []rune) string {
+	return string(source[t.Start : t.Start+t.Length])
+}
+
+func (t Token) String() string {
+	typ := ""
+	switch t.Type {
+	case TOKEN_LEFT_PAREN:
+		typ = "TOKEN_LEFT_PAREN"
+	case TOKEN_RIGHT_PAREN:
+		typ = "TOKEN_RIGHT_PAREN"
+	case TOKEN_LEFT_BRACE:
+		typ = "TOKEN_LEFT_BRACE"
+	case TOKEN_RIGHT_BRACE:
+		typ = "TOKEN_RIGHT_BRACE"
+	case TOKEN_COMMA:
+		typ = "TOKEN_COMMA"
+	case TOKEN_DOT:
+		typ = "TOKEN_DOT"
+	case TOKEN_MINUS:
+		typ = "TOKEN_MINUS"
+	case TOKEN_PLUS:
+		typ = "TOKEN_PLUS"
+	case TOKEN_SEMICOLON:
+		typ = "TOKEN_SEMICOLON"
+	case TOKEN_SLASH:
+		typ = "TOKEN_SLASH"
+	case TOKEN_STAR:
+		typ = "TOKEN_STAR"
+	case TOKEN_BANG:
+		typ = "TOKEN_BANG"
+	case TOKEN_BANG_EQUAL:
+		typ = "TOKEN_BANG_EQUAL"
+	case TOKEN_EQUAL:
+		typ = "TOKEN_EQUAL"
+	case TOKEN_EQUAL_EQUAL:
+		typ = "TOKEN_EQUAL_EQUAL"
+	case TOKEN_GREATER:
+		typ = "TOKEN_GREATER"
+	case TOKEN_GREATER_EQUAL:
+		typ = "TOKEN_GREATER_EQUAL"
+	case TOKEN_LESS:
+		typ = "TOKEN_LESS"
+	case TOKEN_LESS_EQUAL:
+		typ = "TOKEN_LESS_EQUAL"
+	case TOKEN_IDENTIFIER:
+		typ = "TOKEN_IDENTIFIER"
+	case TOKEN_STRING:
+		typ = "TOKEN_STRING"
+	case TOKEN_NUMBER:
+		typ = "TOKEN_NUMBER"
+	case TOKEN_AND:
+		typ = "TOKEN_AND"
+	case TOKEN_CLASS:
+		typ = "TOKEN_CLASS"
+	case TOKEN_ELSE:
+		typ = "TOKEN_ELSE"
+	case TOKEN_FALSE:
+		typ = "TOKEN_FALSE"
+	case TOKEN_FOR:
+		typ = "TOKEN_FOR"
+	case TOKEN_FUN:
+		typ = "TOKEN_FUN"
+	case TOKEN_IF:
+		typ = "TOKEN_IF"
+	case TOKEN_NIL:
+		typ = "TOKEN_NIL"
+	case TOKEN_OR:
+		typ = "TOKEN_OR"
+	case TOKEN_PRINT:
+		typ = "TOKEN_PRINT"
+	case TOKEN_RETURN:
+		typ = "TOKEN_RETURN"
+	case TOKEN_SUPER:
+		typ = "TOKEN_SUPER"
+	case TOKEN_THIS:
+		typ = "TOKEN_THIS"
+	case TOKEN_TRUE:
+		typ = "TOKEN_TRUE"
+	case TOKEN_VAR:
+		typ = "TOKEN_VAR"
+	case TOKEN_WHILE:
+		typ = "TOKEN_WHILE"
+	case TOKEN_ERROR:
+		typ = "TOKEN_ERROR"
+	case TOKEN_EOF:
+		typ = "TOKEN_EOF"
+	default:
+		typ = "TOKEN_UNKONWN"
+	}
+	return fmt.Sprintf("%s %d %d %d", typ, t.Start, t.Length, t.Line)
 }
 
 type Scanner struct {
