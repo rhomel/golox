@@ -365,7 +365,7 @@ func (s *Scanner) identifierType() TokenType {
 		if s.current-s.start > 1 {
 			switch s.source[s.start+1] {
 			case 'a':
-				return s.checkKeyword(2, 3, "alse", TOKEN_FALSE)
+				return s.checkKeyword(2, 3, "lse", TOKEN_FALSE)
 			case 'o':
 				return s.checkKeyword(2, 1, "r", TOKEN_FOR)
 			case 'u':
