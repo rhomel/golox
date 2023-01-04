@@ -195,7 +195,7 @@ func (p *Parser) number() {
 		// should not happen
 		panic("unable to parse float")
 	}
-	p.emitConstant(value)
+	p.emitConstant(NumberValue(value))
 }
 
 func (p *Parser) unary() {
@@ -255,12 +255,12 @@ func (p *Parser) emitReturn() {
 	p.emitByte(OP_RETURN)
 }
 
-func (p *Parser) emitConstant(value float64) {
+func (p *Parser) emitConstant(value Value) {
 	p.emitBytes(OP_CONSTANT, p.makeConstant(value))
 }
 
-func (p *Parser) makeConstant(value float64) uint8 {
-	constant := currentChunk().AddConstant(Value(value))
+func (p *Parser) makeConstant(value Value) uint8 {
+	constant := currentChunk().AddConstant(value)
 	if constant > math.MaxUint8 {
 		p.error("Too many constants in one chunk.")
 		return 0

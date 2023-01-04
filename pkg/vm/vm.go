@@ -1,6 +1,9 @@
 package vm
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 var vm *VM
 var DebugTraceExecution bool = true
@@ -21,6 +24,14 @@ func resetStack() {
 	vm.StackTop = 0
 }
 
+func runtimeError(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	// the book does some C pointer math here that I don't remmeber so this
+	// might not be correct.
+	line := vm.Chunk.Lines[vm.Ip]
+	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
+}
+
 func push(value Value) {
 	vm.Stack[vm.StackTop] = value
 	vm.StackTop++
@@ -29,6 +40,10 @@ func push(value Value) {
 func pop() Value {
 	vm.StackTop--
 	return vm.Stack[vm.StackTop]
+}
+
+func peek(distance int) Value {
+	return vm.Stack[vm.StackTop-1-distance]
 }
 
 func InitVM() {
@@ -66,6 +81,18 @@ func run() InterpretResult {
 	READ_CONSTANT := func() Value {
 		return vm.Chunk.Constants.values[READ_BYTE()]
 	}
+	// we have to deviate from the book because we don't have C macros. So
+	// instead of calling `push` here we simply check if both arguments are
+	// numbers and if so return them.
+	BINARY_OP := func(valueType ValueType) (float64, float64, InterpretResult) {
+		if !peek(0).IsNumber() || !peek(1).IsNumber() {
+			runtimeError("Operands must be numbers.")
+			return 0, 0, INTERPRET_RUNTIME_ERROR
+		}
+		b := pop().AsNumber()
+		a := pop().AsNumber()
+		return a, b, INTERPRET_OK
+	}
 
 	for {
 		if DebugTraceExecution {
@@ -84,23 +111,35 @@ func run() InterpretResult {
 			constant := READ_CONSTANT()
 			push(constant)
 		case OP_ADD:
-			b := pop()
-			a := pop()
-			push(a + b)
+			a, b, i := BINARY_OP(ValNumber)
+			if i != INTERPRET_OK {
+				return i
+			}
+			push(NumberValue(a + b))
 		case OP_SUBTRACT:
-			b := pop()
-			a := pop()
-			push(a - b)
+			a, b, i := BINARY_OP(ValNumber)
+			if i != INTERPRET_OK {
+				return i
+			}
+			push(NumberValue(a - b))
 		case OP_MULTIPLY:
-			b := pop()
-			a := pop()
-			push(a * b)
+			a, b, i := BINARY_OP(ValNumber)
+			if i != INTERPRET_OK {
+				return i
+			}
+			push(NumberValue(a * b))
 		case OP_DIVIDE:
-			b := pop()
-			a := pop()
-			push(a / b)
+			a, b, i := BINARY_OP(ValNumber)
+			if i != INTERPRET_OK {
+				return i
+			}
+			push(NumberValue(a / b))
 		case OP_NEGATE:
-			push(-pop())
+			if !peek(0).IsNumber() {
+				runtimeError("Operand must be a number.")
+				return INTERPRET_RUNTIME_ERROR
+			}
+			push(NumberValue(-pop().AsNumber()))
 		case OP_RETURN:
 			printValue(pop())
 			fmt.Println()

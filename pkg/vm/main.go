@@ -15,17 +15,17 @@ import (
 func sampleChunk() {
 	var constant int
 	chunk := InitChunk()
-	constant = chunk.AddConstant(1.2)
+	constant = chunk.AddConstant(NumberValue(1.2))
 	chunk.Write(OP_CONSTANT, 123)
 	chunk.Write(uint8(constant), 123)
 
-	constant = chunk.AddConstant(3.4)
+	constant = chunk.AddConstant(NumberValue(3.4))
 	chunk.Write(OP_CONSTANT, 123)
 	chunk.Write(uint8(constant), 123)
 
 	chunk.Write(OP_ADD, 123)
 
-	constant = chunk.AddConstant(5.6)
+	constant = chunk.AddConstant(NumberValue(5.6))
 	chunk.Write(OP_CONSTANT, 123)
 	chunk.Write(uint8(constant), 123)
 

@@ -92,5 +92,5 @@ func simpleInstruction(name string, offset int) int {
 }
 
 func printValue(value Value) {
-	fmt.Printf("%g", value)
+	fmt.Printf("%g", value.AsNumber())
 }
