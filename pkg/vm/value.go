@@ -61,6 +61,22 @@ type ValueArray struct {
 	values []Value
 }
 
+func ValuesEqual(a, b Value) bool {
+	if a.Type != b.Type {
+		return false
+	}
+	switch a.Type {
+	case ValBool:
+		return a.AsBool() == b.AsBool()
+	case ValNil:
+		return true
+	case ValNumber:
+		return a.AsNumber() == b.AsNumber()
+	default:
+		return false // unreachable
+	}
+}
+
 func InitValueArray() *ValueArray {
 	return &ValueArray{
 		values: make([]Value, 0),

@@ -4,10 +4,17 @@ import "fmt"
 
 const (
 	OP_CONSTANT uint8 = iota
+	OP_NIL
+	OP_TRUE
+	OP_FALSE
+	OP_EQUAL
+	OP_GREATER
+	OP_LESS
 	OP_ADD
 	OP_SUBTRACT
 	OP_MULTIPLY
 	OP_DIVIDE
+	OP_NOT
 	OP_NEGATE
 	OP_RETURN
 )
@@ -60,6 +67,12 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 	switch instruction {
 	case OP_CONSTANT:
 		return constantInstruction("OP_CONSTANT", c, offset)
+	case OP_NIL:
+		return simpleInstruction("OP_NIL", offset)
+	case OP_TRUE:
+		return simpleInstruction("OP_TRUE", offset)
+	case OP_FALSE:
+		return simpleInstruction("OP_FALSE", offset)
 	case OP_ADD:
 		return simpleInstruction("OP_ADD", offset)
 	case OP_SUBTRACT:
@@ -68,6 +81,8 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return simpleInstruction("OP_MULTIPLY", offset)
 	case OP_DIVIDE:
 		return simpleInstruction("OP_DIVIDE", offset)
+	case OP_NOT:
+		return simpleInstruction("OP_NOT", offset)
 	case OP_NEGATE:
 		return simpleInstruction("OP_NEGATE", offset)
 	case OP_RETURN:
@@ -92,5 +107,12 @@ func simpleInstruction(name string, offset int) int {
 }
 
 func printValue(value Value) {
-	fmt.Printf("%g", value.AsNumber())
+	switch value.Type {
+	case ValBool:
+		fmt.Printf("%v", value.AsBool())
+	case ValNil:
+		fmt.Printf("nil")
+	case ValNumber:
+		fmt.Printf("%g", value.AsNumber())
+	}
 }

@@ -46,6 +46,10 @@ func peek(distance int) Value {
 	return vm.Stack[vm.StackTop-1-distance]
 }
 
+func isFalsey(value Value) bool {
+	return value.IsNil() || (value.IsBool() && !value.AsBool())
+}
+
 func InitVM() {
 	vm = &VM{
 		Chunk: InitChunk(),
@@ -84,7 +88,7 @@ func run() InterpretResult {
 	// we have to deviate from the book because we don't have C macros. So
 	// instead of calling `push` here we simply check if both arguments are
 	// numbers and if so return them.
-	BINARY_OP := func(valueType ValueType) (float64, float64, InterpretResult) {
+	BINARY_OP := func() (float64, float64, InterpretResult) {
 		if !peek(0).IsNumber() || !peek(1).IsNumber() {
 			runtimeError("Operands must be numbers.")
 			return 0, 0, INTERPRET_RUNTIME_ERROR
@@ -110,30 +114,54 @@ func run() InterpretResult {
 		case OP_CONSTANT:
 			constant := READ_CONSTANT()
 			push(constant)
+		case OP_NIL:
+			push(NilValue())
+		case OP_TRUE:
+			push(BooleanValue(true))
+		case OP_FALSE:
+			push(BooleanValue(false))
+		case OP_EQUAL:
+			b := pop()
+			a := pop()
+			push(BooleanValue(ValuesEqual(a, b)))
+		case OP_GREATER:
+			a, b, i := BINARY_OP()
+			if i != INTERPRET_OK {
+				return i
+			}
+			push(BooleanValue(a > b))
+		case OP_LESS:
+			a, b, i := BINARY_OP()
+			if i != INTERPRET_OK {
+				return i
+			}
+			push(BooleanValue(a < b))
 		case OP_ADD:
-			a, b, i := BINARY_OP(ValNumber)
+			a, b, i := BINARY_OP()
 			if i != INTERPRET_OK {
 				return i
 			}
 			push(NumberValue(a + b))
 		case OP_SUBTRACT:
-			a, b, i := BINARY_OP(ValNumber)
+			a, b, i := BINARY_OP()
 			if i != INTERPRET_OK {
 				return i
 			}
 			push(NumberValue(a - b))
 		case OP_MULTIPLY:
-			a, b, i := BINARY_OP(ValNumber)
+			a, b, i := BINARY_OP()
 			if i != INTERPRET_OK {
 				return i
 			}
 			push(NumberValue(a * b))
 		case OP_DIVIDE:
-			a, b, i := BINARY_OP(ValNumber)
+			a, b, i := BINARY_OP()
 			if i != INTERPRET_OK {
 				return i
 			}
 			push(NumberValue(a / b))
+		case OP_NOT:
+			push(BooleanValue(isFalsey(pop())))
 		case OP_NEGATE:
 			if !peek(0).IsNumber() {
 				runtimeError("Operand must be a number.")
