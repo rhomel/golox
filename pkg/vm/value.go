@@ -9,12 +9,20 @@ const (
 	ValBool ValueType = iota
 	ValNil
 	ValNumber
+	ValObj
+)
+
+type ObjType int
+
+const (
+	ObjString ObjType = iota
 )
 
 type Value struct {
 	Type    ValueType
 	Boolean bool
 	Number  float64
+	Obj     Obj
 }
 
 func BooleanValue(value bool) Value {
@@ -37,12 +45,23 @@ func NumberValue(value float64) Value {
 	}
 }
 
+func ObjVal(object Obj) Value {
+	return Value{
+		Type: ValObj,
+		Obj:  object,
+	}
+}
+
 func (v Value) AsBool() bool {
 	return v.Boolean
 }
 
 func (v Value) AsNumber() float64 {
 	return v.Number
+}
+
+func (v Value) AsObject() Obj {
+	return v.Obj
 }
 
 func (v Value) IsBool() bool {
@@ -72,6 +91,10 @@ func ValuesEqual(a, b Value) bool {
 		return true
 	case ValNumber:
 		return a.AsNumber() == b.AsNumber()
+	case ValObj:
+		aString := AsString(a)
+		bString := AsString(b)
+		return aString == bString
 	default:
 		return false // unreachable
 	}

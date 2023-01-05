@@ -128,7 +128,7 @@ func init() {
 	rules[TOKEN_LESS] = ParseRule{nil, parser.binary, PREC_COMPARISON}
 	rules[TOKEN_LESS_EQUAL] = ParseRule{nil, parser.binary, PREC_COMPARISON}
 	rules[TOKEN_IDENTIFIER] = ParseRule{nil, nil, PREC_NONE}
-	rules[TOKEN_STRING] = ParseRule{nil, nil, PREC_NONE}
+	rules[TOKEN_STRING] = ParseRule{parser.string, nil, PREC_NONE}
 	rules[TOKEN_NUMBER] = ParseRule{parser.number, nil, PREC_NONE}
 	rules[TOKEN_AND] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_CLASS] = ParseRule{nil, nil, PREC_NONE}
@@ -221,6 +221,12 @@ func (p *Parser) number() {
 		panic("unable to parse float")
 	}
 	p.emitConstant(NumberValue(value))
+}
+
+func (p *Parser) string() {
+	prev := p.previous
+	// copy only the string (avoid copying the quote characters)
+	p.emitConstant(ObjVal(copyString(string(p.scanner.source[prev.Start+1 : prev.Start+prev.Length-1]))))
 }
 
 func (p *Parser) unary() {

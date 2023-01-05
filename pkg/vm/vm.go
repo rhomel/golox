@@ -18,6 +18,7 @@ type VM struct {
 
 	Stack    [STACK_MAX]Value
 	StackTop int
+	Objects  Obj
 }
 
 func resetStack() {
@@ -50,10 +51,20 @@ func isFalsey(value Value) bool {
 	return value.IsNil() || (value.IsBool() && !value.AsBool())
 }
 
+func concatenate() {
+	b := AsString(pop())
+	a := AsString(pop())
+	push(ObjVal(takeString(a.String + b.String)))
+}
+
 func InitVM() {
 	vm = &VM{
 		Chunk: InitChunk(),
 	}
+}
+
+func FreeVM() {
+	freeObjects()
 }
 
 type InterpretResult int
@@ -137,11 +148,18 @@ func run() InterpretResult {
 			}
 			push(BooleanValue(a < b))
 		case OP_ADD:
-			a, b, i := BINARY_OP()
-			if i != INTERPRET_OK {
-				return i
+			if IsString(peek(0)) && IsString(peek(1)) {
+				concatenate()
+			} else if peek(0).IsNumber() && peek(1).IsNumber() {
+				a, b, i := BINARY_OP()
+				if i != INTERPRET_OK {
+					return i
+				}
+				push(NumberValue(a + b))
+			} else {
+				runtimeError("Operands must be two numbers or two strings.")
+				return INTERPRET_RUNTIME_ERROR
 			}
-			push(NumberValue(a + b))
 		case OP_SUBTRACT:
 			a, b, i := BINARY_OP()
 			if i != INTERPRET_OK {

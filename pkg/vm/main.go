@@ -49,6 +49,7 @@ func Main(args *args.Args) {
 	} else {
 		exit.Exitf(exit.ExitCodeUsageError, "usage: golox <flags> [file]")
 	}
+	FreeVM()
 }
 
 func repl() {

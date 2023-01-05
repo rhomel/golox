@@ -114,5 +114,7 @@ func printValue(value Value) {
 		fmt.Printf("nil")
 	case ValNumber:
 		fmt.Printf("%g", value.AsNumber())
+	case ValObj:
+		printObject(value)
 	}
 }
