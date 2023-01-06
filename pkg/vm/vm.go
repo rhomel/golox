@@ -18,6 +18,7 @@ type VM struct {
 
 	Stack    [STACK_MAX]Value
 	StackTop int
+	Strings  *Table
 	Objects  Obj
 }
 
@@ -59,11 +60,14 @@ func concatenate() {
 
 func InitVM() {
 	vm = &VM{
-		Chunk: InitChunk(),
+		Chunk:   InitChunk(),
+		Strings: &Table{},
 	}
+	vm.Strings.initTable()
 }
 
 func FreeVM() {
+	vm.Strings.freeTable()
 	freeObjects()
 }
 

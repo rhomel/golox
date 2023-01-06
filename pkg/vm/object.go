@@ -17,21 +17,30 @@ type Obj interface {
 
 type ObjectString struct {
 	String string
+	Hash   uint32
 	next   Obj
 }
 
 var _ Obj = (*ObjectString)(nil)
 
 func copyString(chars string) *ObjectString {
+	hash := hashString(chars)
+	if interned := vm.Strings.FindString(chars, hash); interned != nil {
+		return interned
+	}
 	// We don't do much with strings because Go already stores strings in a
 	// convenient manner. We do however try to stay true to the book and create
 	// an actual copy of the string. This is just so we can implement our own
 	// Garbage collector later for practice.
-	return allocateString(strings.Clone(chars))
+	return allocateString(strings.Clone(chars), hash)
 }
 
 func takeString(s string) *ObjectString {
-	return allocateString(s)
+	hash := hashString(s)
+	if interned := vm.Strings.FindString(s, hash); interned != nil {
+		return interned
+	}
+	return allocateString(s, hash)
 }
 
 func allocateObject(obj Obj) {
@@ -39,12 +48,24 @@ func allocateObject(obj Obj) {
 	vm.Objects = obj
 }
 
-func allocateString(s string) *ObjectString {
+func allocateString(s string, hash uint32) *ObjectString {
 	os := &ObjectString{
 		String: s,
+		Hash:   hash,
 	}
 	allocateObject(os)
+	vm.Strings.Set(os, NilValue())
 	return os
+}
+
+func hashString(s string) uint32 {
+	var hash uint32 = 2166136261
+	b := []byte(s)
+	for i := 0; i < len(b); i++ {
+		hash = hash ^ uint32(b[i])
+		hash = hash * 16777619
+	}
+	return hash
 }
 
 func printObject(value Value) {
