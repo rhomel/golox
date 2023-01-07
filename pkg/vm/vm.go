@@ -135,6 +135,8 @@ func run() InterpretResult {
 			push(BooleanValue(true))
 		case OP_FALSE:
 			push(BooleanValue(false))
+		case OP_POP:
+			pop()
 		case OP_EQUAL:
 			b := pop()
 			a := pop()

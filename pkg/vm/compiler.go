@@ -168,6 +168,12 @@ func (p *Parser) expression() {
 	p.parsePrecedence(PREC_ASSIGNMENT)
 }
 
+func (p *Parser) expressionStatement() {
+	p.expression()
+	p.consume(TOKEN_SEMICOLON, "Expect ';' after expression.")
+	p.emitByte(OP_POP)
+}
+
 func (p *Parser) printStatement() {
 	p.expression()
 	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
@@ -181,6 +187,8 @@ func (p *Parser) declaration() {
 func (p *Parser) statement() {
 	if p.match(TOKEN_PRINT) {
 		p.printStatement()
+	} else {
+		p.expressionStatement()
 	}
 }
 
