@@ -23,8 +23,10 @@ func compile(source string, chunk *Chunk) bool {
 	compilingChunk = chunk
 
 	parser.advance()
-	parser.expression()
-	parser.consume(TOKEN_EOF, "Expect end of expression.")
+
+	for !parser.match(TOKEN_EOF) {
+		parser.declaration()
+	}
 
 	endCompiler()
 	return !parser.hadError
@@ -166,6 +168,22 @@ func (p *Parser) expression() {
 	p.parsePrecedence(PREC_ASSIGNMENT)
 }
 
+func (p *Parser) printStatement() {
+	p.expression()
+	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
+	p.emitByte(OP_PRINT)
+}
+
+func (p *Parser) declaration() {
+	p.statement()
+}
+
+func (p *Parser) statement() {
+	if p.match(TOKEN_PRINT) {
+		p.printStatement()
+	}
+}
+
 func (p *Parser) binary() {
 	operatorType := p.previous.Type
 	rule := getRule(operatorType)
@@ -272,6 +290,18 @@ func (p *Parser) consume(typ TokenType, message string) {
 		return
 	}
 	p.errorAtCurrent(message)
+}
+
+func (p *Parser) match(typ TokenType) bool {
+	if !p.check(typ) {
+		return false
+	}
+	p.advance()
+	return true
+}
+
+func (p *Parser) check(typ TokenType) bool {
+	return p.current.Type == typ
 }
 
 func (p *Parser) emitByte(byt uint8) {

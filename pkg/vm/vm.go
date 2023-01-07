@@ -190,9 +190,10 @@ func run() InterpretResult {
 				return INTERPRET_RUNTIME_ERROR
 			}
 			push(NumberValue(-pop().AsNumber()))
-		case OP_RETURN:
+		case OP_PRINT:
 			printValue(pop())
 			fmt.Println()
+		case OP_RETURN:
 			return INTERPRET_OK
 		default:
 			// no-op
