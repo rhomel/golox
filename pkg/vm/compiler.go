@@ -180,8 +180,41 @@ func (p *Parser) printStatement() {
 	p.emitByte(OP_PRINT)
 }
 
+func (p *Parser) synchronize() {
+	p.panicMode = false
+
+	for p.current.Type != TOKEN_EOF {
+		if p.previous.Type == TOKEN_SEMICOLON {
+			return
+		}
+		switch p.current.Type {
+		case TOKEN_CLASS:
+			return
+		case TOKEN_FUN:
+			return
+		case TOKEN_VAR:
+			return
+		case TOKEN_FOR:
+			return
+		case TOKEN_IF:
+			return
+		case TOKEN_WHILE:
+			return
+		case TOKEN_PRINT:
+			return
+		case TOKEN_RETURN:
+			return
+		}
+		p.advance()
+	}
+}
+
 func (p *Parser) declaration() {
 	p.statement()
+
+	if p.panicMode {
+		p.synchronize()
+	}
 }
 
 func (p *Parser) statement() {
