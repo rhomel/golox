@@ -210,11 +210,28 @@ func (p *Parser) synchronize() {
 }
 
 func (p *Parser) declaration() {
-	p.statement()
+	if p.match(TOKEN_VAR) {
+		p.varDeclaration()
+	} else {
+		p.statement()
+	}
 
 	if p.panicMode {
 		p.synchronize()
 	}
+}
+
+func (p *Parser) varDeclaration() {
+	var global uint8 = p.parseVariable("Expect variable name.")
+
+	if p.match(TOKEN_EQUAL) {
+		p.expression()
+	} else {
+		p.emitByte(OP_NIL)
+	}
+
+	p.consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.")
+	p.defineVariable(global)
 }
 
 func (p *Parser) statement() {
@@ -319,6 +336,21 @@ func (p *Parser) parsePrecedence(precedence Precedence) {
 		infixRule := getRule(p.previous.Type).infix
 		infixRule()
 	}
+}
+
+func (p *Parser) identifierConstant(name *Token) uint8 {
+	s := string(p.scanner.source[name.Start : name.Start+name.Length])
+	fmt.Printf("identifierConstant: '%s'\n", s)
+	return p.makeConstant(ObjVal(copyString(s)))
+}
+
+func (p *Parser) parseVariable(errorMessage string) uint8 {
+	p.consume(TOKEN_IDENTIFIER, errorMessage)
+	return p.identifierConstant(&p.previous)
+}
+
+func (p *Parser) defineVariable(global uint8) {
+	p.emitBytes(OP_DEFINE_GLOBAL, global)
 }
 
 func getRule(typ TokenType) ParseRule {

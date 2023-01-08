@@ -19,6 +19,7 @@ type VM struct {
 	Stack    [STACK_MAX]Value
 	StackTop int
 	Strings  *Table
+	Globals  *Table
 	Objects  Obj
 }
 
@@ -61,12 +62,15 @@ func concatenate() {
 func InitVM() {
 	vm = &VM{
 		Chunk:   InitChunk(),
+		Globals: &Table{},
 		Strings: &Table{},
 	}
+	vm.Globals.initTable()
 	vm.Strings.initTable()
 }
 
 func FreeVM() {
+	vm.Globals.freeTable()
 	vm.Strings.freeTable()
 	freeObjects()
 }
@@ -99,6 +103,9 @@ func run() InterpretResult {
 	}
 	READ_CONSTANT := func() Value {
 		return vm.Chunk.Constants.values[READ_BYTE()]
+	}
+	READ_STRING := func() *ObjectString {
+		return AsString(READ_CONSTANT())
 	}
 	// we have to deviate from the book because we don't have C macros. So
 	// instead of calling `push` here we simply check if both arguments are
@@ -136,6 +143,10 @@ func run() InterpretResult {
 		case OP_FALSE:
 			push(BooleanValue(false))
 		case OP_POP:
+			pop()
+		case OP_DEFINE_GLOBAL:
+			name := READ_STRING()
+			vm.Globals.Set(name, peek(0))
 			pop()
 		case OP_EQUAL:
 			b := pop()
