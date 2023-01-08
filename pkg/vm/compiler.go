@@ -129,7 +129,7 @@ func init() {
 	rules[TOKEN_GREATER_EQUAL] = ParseRule{nil, parser.binary, PREC_COMPARISON}
 	rules[TOKEN_LESS] = ParseRule{nil, parser.binary, PREC_COMPARISON}
 	rules[TOKEN_LESS_EQUAL] = ParseRule{nil, parser.binary, PREC_COMPARISON}
-	rules[TOKEN_IDENTIFIER] = ParseRule{nil, nil, PREC_NONE}
+	rules[TOKEN_IDENTIFIER] = ParseRule{parser.variable, nil, PREC_NONE}
 	rules[TOKEN_STRING] = ParseRule{parser.string, nil, PREC_NONE}
 	rules[TOKEN_NUMBER] = ParseRule{parser.number, nil, PREC_NONE}
 	rules[TOKEN_AND] = ParseRule{nil, nil, PREC_NONE}
@@ -305,6 +305,15 @@ func (p *Parser) string() {
 	p.emitConstant(ObjVal(copyString(string(p.scanner.source[prev.Start+1 : prev.Start+prev.Length-1]))))
 }
 
+func (p *Parser) namedVariable(name Token) {
+	arg := p.identifierConstant(&name)
+	p.emitBytes(OP_GET_GLOBAL, arg)
+}
+
+func (p *Parser) variable() {
+	p.namedVariable(p.previous)
+}
+
 func (p *Parser) unary() {
 	operatorType := parser.previous.Type
 
@@ -340,7 +349,6 @@ func (p *Parser) parsePrecedence(precedence Precedence) {
 
 func (p *Parser) identifierConstant(name *Token) uint8 {
 	s := string(p.scanner.source[name.Start : name.Start+name.Length])
-	fmt.Printf("identifierConstant: '%s'\n", s)
 	return p.makeConstant(ObjVal(copyString(s)))
 }
 

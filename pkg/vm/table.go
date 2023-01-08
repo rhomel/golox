@@ -32,15 +32,25 @@ func (t *Table) Set(key *ObjectString, value Value) bool {
 	isNewKey := !ok
 	if isNewKey {
 		entry = &Entry{}
+		t.entries[key] = entry
 	}
 	entry.key = key
 	entry.value = value
 	return isNewKey
 }
 
+func (t *Table) FindEntry(key *ObjectString) *Entry {
+	for _, e := range t.entries {
+		if e.key.String == key.String {
+			return e
+		}
+	}
+	return nil
+}
+
 func (t *Table) Get(key *ObjectString, value *Value) bool {
-	entry, ok := t.entries[key]
-	if !ok {
+	entry := t.FindEntry(key)
+	if entry == nil {
 		return false
 	}
 	*value = entry.value
@@ -48,10 +58,11 @@ func (t *Table) Get(key *ObjectString, value *Value) bool {
 }
 
 func (t *Table) Delete(key *ObjectString) bool {
-	if _, ok := t.entries[key]; !ok {
+	entry := t.FindEntry(key)
+	if entry == nil {
 		return false
 	}
-	delete(t.entries, key)
+	delete(t.entries, entry.key)
 	return true
 }
 

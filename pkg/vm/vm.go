@@ -144,6 +144,14 @@ func run() InterpretResult {
 			push(BooleanValue(false))
 		case OP_POP:
 			pop()
+		case OP_GET_GLOBAL:
+			name := READ_STRING()
+			value := Value{}
+			if !vm.Globals.Get(name, &value) {
+				runtimeError("Undefined variable '%s'.", name.String)
+				return INTERPRET_RUNTIME_ERROR
+			}
+			push(value)
 		case OP_DEFINE_GLOBAL:
 			name := READ_STRING()
 			vm.Globals.Set(name, peek(0))

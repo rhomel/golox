@@ -8,6 +8,7 @@ const (
 	OP_TRUE
 	OP_FALSE
 	OP_POP
+	OP_GET_GLOBAL
 	OP_DEFINE_GLOBAL
 	OP_EQUAL
 	OP_GREATER
@@ -78,6 +79,8 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return simpleInstruction("OP_FALSE", offset)
 	case OP_POP:
 		return simpleInstruction("OP_POP", offset)
+	case OP_GET_GLOBAL:
+		return constantInstruction("OP_GET_GLOBAL", c, offset)
 	case OP_DEFINE_GLOBAL:
 		return constantInstruction("OP_DEFINE_GLOBAL", c, offset)
 	case OP_ADD:
