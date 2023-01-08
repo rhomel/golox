@@ -105,7 +105,7 @@ type ParseRule struct {
 	precedence Precedence
 }
 
-type ParseFn func()
+type ParseFn func(bool)
 
 var rules = make([]ParseRule, TOKEN_EOF+1)
 
@@ -242,7 +242,7 @@ func (p *Parser) statement() {
 	}
 }
 
-func (p *Parser) binary() {
+func (p *Parser) binary(canAssign bool) {
 	operatorType := p.previous.Type
 	rule := getRule(operatorType)
 	p.parsePrecedence(Precedence(rule.precedence + 1))
@@ -272,7 +272,7 @@ func (p *Parser) binary() {
 	}
 }
 
-func (p *Parser) literal() {
+func (p *Parser) literal(canAssign bool) {
 	switch parser.previous.Type {
 	case TOKEN_FALSE:
 		p.emitByte(OP_FALSE)
@@ -285,12 +285,12 @@ func (p *Parser) literal() {
 	}
 }
 
-func (p *Parser) grouping() {
+func (p *Parser) grouping(canAssign bool) {
 	p.expression()
 	p.consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.")
 }
 
-func (p *Parser) number() {
+func (p *Parser) number(canAssign bool) {
 	value, err := strconv.ParseFloat(p.previous.StartAsString(p.scanner.source), 64)
 	if err != nil {
 		// should not happen
@@ -299,22 +299,28 @@ func (p *Parser) number() {
 	p.emitConstant(NumberValue(value))
 }
 
-func (p *Parser) string() {
+func (p *Parser) string(canAssign bool) {
 	prev := p.previous
 	// copy only the string (avoid copying the quote characters)
 	p.emitConstant(ObjVal(copyString(string(p.scanner.source[prev.Start+1 : prev.Start+prev.Length-1]))))
 }
 
-func (p *Parser) namedVariable(name Token) {
+func (p *Parser) namedVariable(name Token, canAssign bool) {
 	arg := p.identifierConstant(&name)
-	p.emitBytes(OP_GET_GLOBAL, arg)
+
+	if canAssign && p.match(TOKEN_EQUAL) {
+		p.expression()
+		p.emitBytes(OP_SET_GLOBAL, arg)
+	} else {
+		p.emitBytes(OP_GET_GLOBAL, arg)
+	}
 }
 
-func (p *Parser) variable() {
-	p.namedVariable(p.previous)
+func (p *Parser) variable(canAssign bool) {
+	p.namedVariable(p.previous, canAssign)
 }
 
-func (p *Parser) unary() {
+func (p *Parser) unary(canAssign bool) {
 	operatorType := parser.previous.Type
 
 	// compile the operand
@@ -338,12 +344,18 @@ func (p *Parser) parsePrecedence(precedence Precedence) {
 		p.error("Expect expression")
 		return
 	}
-	prefixRule()
+
+	canAssign := precedence <= PREC_ASSIGNMENT
+	prefixRule(canAssign)
 
 	for precedence <= getRule(p.current.Type).precedence {
 		p.advance()
 		infixRule := getRule(p.previous.Type).infix
-		infixRule()
+		infixRule(canAssign)
+	}
+
+	if canAssign && p.match(TOKEN_EQUAL) {
+		p.error("Invalid assignment target.")
 	}
 }
 

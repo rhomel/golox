@@ -156,6 +156,13 @@ func run() InterpretResult {
 			name := READ_STRING()
 			vm.Globals.Set(name, peek(0))
 			pop()
+		case OP_SET_GLOBAL:
+			name := READ_STRING()
+			if vm.Globals.Set(name, peek(0)) {
+				vm.Globals.Delete(name)
+				runtimeError("Undefined variable '%s'.", name.String)
+				return INTERPRET_RUNTIME_ERROR
+			}
 		case OP_EQUAL:
 			b := pop()
 			a := pop()
