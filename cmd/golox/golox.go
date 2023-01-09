@@ -23,6 +23,7 @@ import (
 
 func main() {
 	implementation := flag.String("implementation", "treewalk", "interpreter implementation to use")
+	disassembler := flag.Bool("disassembler", false, "enable vm stack disassembler")
 	cpuProfileFile := flag.String("cpu-profile", "", "file to output cpu profile")
 	flag.Parse()
 	args := args.New()
@@ -30,7 +31,7 @@ func main() {
 	case "treewalk":
 		treewalkMain(args, *cpuProfileFile)
 	case "vm":
-		vm.Main(args)
+		vm.Main(*disassembler, args)
 	default:
 		exit.Exitf(exit.ExitCodeUsageError, fmt.Sprintf("%s is not a valid implementation flag value", *implementation))
 	}

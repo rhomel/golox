@@ -38,7 +38,8 @@ func sampleChunk() {
 }
 
 // Main is the entry point for the VM implementation of golox.
-func Main(args *args.Args) {
+func Main(enableDisassembler bool, args *args.Args) {
+	DebugTraceExecution = enableDisassembler
 	InitVM()
 
 	if args.Len() == 0 {
