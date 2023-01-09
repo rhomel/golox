@@ -44,6 +44,14 @@ func endCompiler() {
 	}
 }
 
+func beginScope() {
+	current.scopeDepth++
+}
+
+func endScope() {
+	current.scopeDepth--
+}
+
 func _chapter_16_compile(source string) {
 	scanner := InitScanner(source)
 
@@ -182,6 +190,14 @@ func (p *Parser) expression() {
 	p.parsePrecedence(PREC_ASSIGNMENT)
 }
 
+func (p *Parser) block() {
+	for !p.check(TOKEN_RIGHT_BRACE) && !p.check(TOKEN_EOF) {
+		p.declaration()
+	}
+
+	p.consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.")
+}
+
 func (p *Parser) expressionStatement() {
 	p.expression()
 	p.consume(TOKEN_SEMICOLON, "Expect ';' after expression.")
@@ -251,6 +267,10 @@ func (p *Parser) varDeclaration() {
 func (p *Parser) statement() {
 	if p.match(TOKEN_PRINT) {
 		p.printStatement()
+	} else if p.match(TOKEN_LEFT_BRACE) {
+		beginScope()
+		p.block()
+		endScope()
 	} else {
 		p.expressionStatement()
 	}
