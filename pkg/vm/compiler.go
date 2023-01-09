@@ -9,6 +9,7 @@ import (
 
 var debugPrintCode = false
 
+var current *Compiler
 var compilingChunk *Chunk
 
 func currentChunk() *Chunk {
@@ -20,6 +21,8 @@ func compile(source string, chunk *Chunk) bool {
 	parser.scanner = scanner
 	parser.hadError = false
 	parser.panicMode = false
+	compiler := Compiler{}
+	parser.InitCompiler(&compiler)
 	compilingChunk = chunk
 
 	parser.advance()
@@ -103,6 +106,17 @@ type ParseRule struct {
 	prefix     ParseFn
 	infix      ParseFn
 	precedence Precedence
+}
+
+type Local struct {
+	name  Token
+	depth int
+}
+
+type Compiler struct {
+	locals     [UINT8_COUNT]Local
+	localCount int
+	scopeDepth int
 }
 
 type ParseFn func(bool)
@@ -413,6 +427,12 @@ func (p *Parser) emitReturn() {
 
 func (p *Parser) emitConstant(value Value) {
 	p.emitBytes(OP_CONSTANT, p.makeConstant(value))
+}
+
+func (p *Parser) InitCompiler(compiler *Compiler) {
+	compiler.localCount = 0
+	compiler.scopeDepth = 0
+	current = compiler
 }
 
 func (p *Parser) makeConstant(value Value) uint8 {

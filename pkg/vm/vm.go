@@ -2,12 +2,14 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"os"
 )
 
 var vm *VM
 var DebugTraceExecution bool = true
 
+const UINT8_COUNT = math.MaxUint8 + 1
 const STACK_MAX = 256
 
 type VM struct {
