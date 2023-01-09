@@ -44,12 +44,17 @@ func endCompiler() {
 	}
 }
 
-func beginScope() {
+func (p *Parser) beginScope() {
 	current.scopeDepth++
 }
 
-func endScope() {
+func (p *Parser) endScope() {
 	current.scopeDepth--
+
+	for current.localCount > 0 && current.locals[current.localCount-1].depth > current.scopeDepth {
+		p.emitByte(OP_POP)
+		current.localCount--
+	}
 }
 
 func _chapter_16_compile(source string) {
@@ -121,10 +126,21 @@ type Local struct {
 	depth int
 }
 
+// AsString returns the local token's string from the parser source
+func (l Local) AsString(source []rune) string {
+	return l.name.StartAsString(source)
+}
+
 type Compiler struct {
 	locals     [UINT8_COUNT]Local
 	localCount int
 	scopeDepth int
+}
+
+// Return true if scopeDepth is greater than 0. This is not part of the book,
+// it is a helper to make the other code easier to read.
+func (c *Compiler) inLocalScope() bool {
+	return c.scopeDepth > 0
 }
 
 type ParseFn func(bool)
@@ -268,9 +284,9 @@ func (p *Parser) statement() {
 	if p.match(TOKEN_PRINT) {
 		p.printStatement()
 	} else if p.match(TOKEN_LEFT_BRACE) {
-		beginScope()
+		p.beginScope()
 		p.block()
-		endScope()
+		p.endScope()
 	} else {
 		p.expressionStatement()
 	}
@@ -340,13 +356,22 @@ func (p *Parser) string(canAssign bool) {
 }
 
 func (p *Parser) namedVariable(name Token, canAssign bool) {
-	arg := p.identifierConstant(&name)
+	var getOp, setOp uint8
+	arg := p.resolveLocal(current, &name)
+	if arg != -1 {
+		getOp = OP_GET_LOCAL
+		setOp = OP_SET_LOCAL
+	} else {
+		arg = int(p.identifierConstant(&name))
+		getOp = OP_GET_GLOBAL
+		setOp = OP_SET_GLOBAL
+	}
 
 	if canAssign && p.match(TOKEN_EQUAL) {
 		p.expression()
-		p.emitBytes(OP_SET_GLOBAL, arg)
+		p.emitBytes(setOp, uint8(arg))
 	} else {
-		p.emitBytes(OP_GET_GLOBAL, arg)
+		p.emitBytes(getOp, uint8(arg))
 	}
 }
 
@@ -398,12 +423,74 @@ func (p *Parser) identifierConstant(name *Token) uint8 {
 	return p.makeConstant(ObjVal(copyString(s)))
 }
 
+func (p *Parser) identifiersEqual(a, b *Token) bool {
+	if a.Length != b.Length {
+		return false
+	}
+	return a.StartAsString(p.scanner.source) == b.StartAsString(p.scanner.source)
+}
+
+func (p *Parser) resolveLocal(compiler *Compiler, name *Token) int {
+	for i := compiler.localCount - 1; i >= 0; i-- {
+		local := &compiler.locals[i]
+		if p.identifiersEqual(name, &local.name) {
+			if local.depth == -1 {
+				p.error("Can't read local variable in its own initializer.")
+			}
+			return i
+		}
+	}
+	return -1
+}
+
+func (p *Parser) addLocal(name Token) {
+	if current.localCount == UINT8_COUNT {
+		p.error("Too many local variables in function.")
+		return
+	}
+	local := &current.locals[current.localCount]
+	current.localCount++
+	local.name = name
+	local.depth = -1
+}
+
+func (p *Parser) declareVariable() {
+	if current.scopeDepth == 0 {
+		return
+	}
+	name := &p.previous
+	for i := current.localCount - 1; i >= 0; i-- {
+		local := &current.locals[i]
+		if local.depth != -1 && local.depth < current.scopeDepth {
+			break
+		}
+		if p.identifiersEqual(name, &local.name) {
+			p.error("Already a variable with this name in this scope.")
+		}
+	}
+	p.addLocal(*name)
+}
+
 func (p *Parser) parseVariable(errorMessage string) uint8 {
 	p.consume(TOKEN_IDENTIFIER, errorMessage)
+
+	p.declareVariable()
+	if current.inLocalScope() {
+		return 0
+	}
+
 	return p.identifierConstant(&p.previous)
 }
 
+func (p *Parser) markInitialized() {
+	current.locals[current.localCount-1].depth = current.scopeDepth
+}
+
 func (p *Parser) defineVariable(global uint8) {
+	if current.inLocalScope() {
+		p.markInitialized()
+		return
+	}
 	p.emitBytes(OP_DEFINE_GLOBAL, global)
 }
 

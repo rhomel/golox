@@ -8,6 +8,8 @@ const (
 	OP_TRUE
 	OP_FALSE
 	OP_POP
+	OP_GET_LOCAL
+	OP_SET_LOCAL
 	OP_GET_GLOBAL
 	OP_DEFINE_GLOBAL
 	OP_SET_GLOBAL
@@ -80,6 +82,10 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return simpleInstruction("OP_FALSE", offset)
 	case OP_POP:
 		return simpleInstruction("OP_POP", offset)
+	case OP_GET_LOCAL:
+		return byteInstruction("OP_GET_LOCAL", c, offset)
+	case OP_SET_LOCAL:
+		return byteInstruction("OP_SET_LOCAL", c, offset)
 	case OP_GET_GLOBAL:
 		return constantInstruction("OP_GET_GLOBAL", c, offset)
 	case OP_DEFINE_GLOBAL:
@@ -119,6 +125,12 @@ func constantInstruction(name string, chunk *Chunk, offset int) int {
 func simpleInstruction(name string, offset int) int {
 	fmt.Printf("%s\n", name)
 	return offset + 1
+}
+
+func byteInstruction(name string, chunk *Chunk, offset int) int {
+	slot := chunk.Code[offset+1]
+	fmt.Printf("%-16s %4d\n", name, slot)
+	return offset + 2
 }
 
 func printValue(value Value) {

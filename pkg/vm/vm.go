@@ -146,6 +146,12 @@ func run() InterpretResult {
 			push(BooleanValue(false))
 		case OP_POP:
 			pop()
+		case OP_GET_LOCAL:
+			slot := READ_BYTE()
+			push(vm.Stack[slot])
+		case OP_SET_LOCAL:
+			slot := READ_BYTE()
+			vm.Stack[slot] = peek(0)
 		case OP_GET_GLOBAL:
 			name := READ_STRING()
 			value := Value{}
