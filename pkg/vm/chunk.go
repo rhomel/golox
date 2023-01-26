@@ -23,6 +23,8 @@ const (
 	OP_NOT
 	OP_NEGATE
 	OP_PRINT
+	OP_JUMP
+	OP_JUMP_IF_FALSE
 	OP_RETURN
 )
 
@@ -106,6 +108,10 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return simpleInstruction("OP_NEGATE", offset)
 	case OP_PRINT:
 		return simpleInstruction("OP_PRINT", offset)
+	case OP_JUMP:
+		return jumpInstruction("OP_JUMP", 1, c, offset)
+	case OP_JUMP_IF_FALSE:
+		return jumpInstruction("OP_JUMP_IF_FALSE", 1, c, offset)
 	case OP_RETURN:
 		return simpleInstruction("OP_RETURN", offset)
 	default:
@@ -131,6 +137,14 @@ func byteInstruction(name string, chunk *Chunk, offset int) int {
 	slot := chunk.Code[offset+1]
 	fmt.Printf("%-16s %4d\n", name, slot)
 	return offset + 2
+}
+
+func jumpInstruction(name string, sign int, chunk *Chunk, offset int) int {
+	high := (uint16)(chunk.Code[offset+1]) << 8
+	low := uint16(chunk.Code[offset+2])
+	var jump uint16 = high | low
+	fmt.Printf("%-16s %4d -> %d\n", name, offset, offset+2+sign*int(jump))
+	return offset + 3
 }
 
 func printValue(value Value) {

@@ -220,6 +220,26 @@ func (p *Parser) expressionStatement() {
 	p.emitByte(OP_POP)
 }
 
+func (p *Parser) ifStatement() {
+	p.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.")
+	p.expression()
+	p.consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.")
+
+	var thenJump int = p.emitJump(OP_JUMP_IF_FALSE)
+	p.emitByte(OP_POP)
+	p.statement()
+
+	var elseJump int = p.emitJump(OP_JUMP)
+
+	p.patchJump(thenJump)
+	p.emitByte(OP_POP)
+
+	if p.match(TOKEN_ELSE) {
+		p.statement()
+	}
+	p.patchJump(elseJump)
+}
+
 func (p *Parser) printStatement() {
 	p.expression()
 	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
@@ -283,6 +303,8 @@ func (p *Parser) varDeclaration() {
 func (p *Parser) statement() {
 	if p.match(TOKEN_PRINT) {
 		p.printStatement()
+	} else if p.match(TOKEN_IF) {
+		p.ifStatement()
 	} else if p.match(TOKEN_LEFT_BRACE) {
 		p.beginScope()
 		p.block()
@@ -528,12 +550,32 @@ func (p *Parser) emitBytes(byte1, byte2 uint8) {
 	p.emitByte(byte2)
 }
 
+func (p *Parser) emitJump(instruction uint8) int {
+	p.emitByte(instruction)
+	p.emitByte(0xff)
+	p.emitByte(0xff)
+	return currentChunk().Count() - 2
+}
+
 func (p *Parser) emitReturn() {
 	p.emitByte(OP_RETURN)
 }
 
 func (p *Parser) emitConstant(value Value) {
 	p.emitBytes(OP_CONSTANT, p.makeConstant(value))
+}
+
+func (p *Parser) patchJump(offset int) {
+	var jump int = currentChunk().Count() - offset - 2
+
+	if jump > math.MaxUint16 {
+		p.error("Too much code to jump over.")
+	}
+
+	high := (jump >> 8) & 0xff
+	low := jump & 0xff
+	currentChunk().Code[offset] = (uint8)(high)
+	currentChunk().Code[offset+1] = (uint8)(low)
 }
 
 func (p *Parser) InitCompiler(compiler *Compiler) {

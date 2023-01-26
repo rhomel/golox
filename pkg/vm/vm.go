@@ -103,6 +103,12 @@ func run() InterpretResult {
 		vm.Ip++
 		return instruction
 	}
+	READ_SHORT := func() uint16 {
+		high := (uint16)(READ_BYTE()) << 8
+		low := (uint16)(READ_BYTE())
+		short := high | low
+		return short
+	}
 	READ_CONSTANT := func() Value {
 		return vm.Chunk.Constants.values[READ_BYTE()]
 	}
@@ -229,6 +235,14 @@ func run() InterpretResult {
 		case OP_PRINT:
 			printValue(pop())
 			fmt.Println()
+		case OP_JUMP:
+			var offset uint16 = READ_SHORT()
+			vm.Ip += int(offset)
+		case OP_JUMP_IF_FALSE:
+			var offset uint16 = READ_SHORT()
+			if isFalsey(peek(0)) {
+				vm.Ip += int(offset)
+			}
 		case OP_RETURN:
 			return INTERPRET_OK
 		default:
