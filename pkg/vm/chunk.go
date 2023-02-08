@@ -25,6 +25,7 @@ const (
 	OP_PRINT
 	OP_JUMP
 	OP_JUMP_IF_FALSE
+	OP_LOOP
 	OP_RETURN
 )
 
@@ -118,6 +119,8 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return jumpInstruction("OP_JUMP", 1, c, offset)
 	case OP_JUMP_IF_FALSE:
 		return jumpInstruction("OP_JUMP_IF_FALSE", 1, c, offset)
+	case OP_LOOP:
+		return jumpInstruction("OP_LOOP", -1, c, offset)
 	case OP_RETURN:
 		return simpleInstruction("OP_RETURN", offset)
 	default:

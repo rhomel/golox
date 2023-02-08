@@ -246,6 +246,21 @@ func (p *Parser) printStatement() {
 	p.emitByte(OP_PRINT)
 }
 
+func (p *Parser) whileStatement() {
+	loopStart := currentChunk().Count()
+	p.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.")
+	p.expression()
+	p.consume(TOKEN_RIGHT_PAREN, "Expect ')' after 'while'.")
+
+	exitJump := p.emitJump(OP_JUMP_IF_FALSE)
+	p.emitByte(OP_POP)
+	p.statement()
+	p.emitLoop(uint8(loopStart))
+
+	p.patchJump(exitJump)
+	p.emitByte(OP_POP)
+}
+
 func (p *Parser) synchronize() {
 	p.panicMode = false
 
@@ -305,6 +320,8 @@ func (p *Parser) statement() {
 		p.printStatement()
 	} else if p.match(TOKEN_IF) {
 		p.ifStatement()
+	} else if p.match(TOKEN_WHILE) {
+		p.whileStatement()
 	} else if p.match(TOKEN_LEFT_BRACE) {
 		p.beginScope()
 		p.block()
@@ -568,6 +585,19 @@ func (p *Parser) emitByte(byt uint8) {
 func (p *Parser) emitBytes(byte1, byte2 uint8) {
 	p.emitByte(byte1)
 	p.emitByte(byte2)
+}
+
+func (p *Parser) emitLoop(loopStart uint8) {
+	p.emitByte(OP_LOOP)
+
+	offset := currentChunk().Count() - int(loopStart) + 2
+	if offset > math.MaxUint16 {
+		p.error("Loop body too large.")
+	}
+	high := uint8((offset >> 8) & 0xff)
+	low := uint8(offset & 0xff)
+	p.emitByte(high)
+	p.emitByte(low)
 }
 
 func (p *Parser) emitJump(instruction uint8) int {

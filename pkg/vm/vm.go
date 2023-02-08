@@ -243,6 +243,9 @@ func run() InterpretResult {
 			if isFalsey(peek(0)) {
 				vm.Ip += int(offset)
 			}
+		case OP_LOOP:
+			var offset uint16 = READ_SHORT()
+			vm.Ip = vm.Ip - int(offset)
 		case OP_RETURN:
 			return INTERPRET_OK
 		default:
