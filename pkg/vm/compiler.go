@@ -170,7 +170,7 @@ func init() {
 	rules[TOKEN_IDENTIFIER] = ParseRule{parser.variable, nil, PREC_NONE}
 	rules[TOKEN_STRING] = ParseRule{parser.string, nil, PREC_NONE}
 	rules[TOKEN_NUMBER] = ParseRule{parser.number, nil, PREC_NONE}
-	rules[TOKEN_AND] = ParseRule{nil, nil, PREC_NONE}
+	rules[TOKEN_AND] = ParseRule{nil, parser.and_, PREC_AND}
 	rules[TOKEN_CLASS] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_ELSE] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_FALSE] = ParseRule{parser.literal, nil, PREC_NONE}
@@ -178,7 +178,7 @@ func init() {
 	rules[TOKEN_FUN] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_IF] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_NIL] = ParseRule{parser.literal, nil, PREC_NONE}
-	rules[TOKEN_OR] = ParseRule{nil, nil, PREC_NONE}
+	rules[TOKEN_OR] = ParseRule{nil, parser.or_, PREC_OR}
 	rules[TOKEN_PRINT] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_RETURN] = ParseRule{nil, nil, PREC_NONE}
 	rules[TOKEN_SUPER] = ParseRule{nil, nil, PREC_NONE}
@@ -371,6 +371,17 @@ func (p *Parser) number(canAssign bool) {
 	p.emitConstant(NumberValue(value))
 }
 
+func (p *Parser) or_(canAssign bool) {
+	elseJump := p.emitJump(OP_JUMP_IF_FALSE)
+	endJump := p.emitJump(OP_JUMP)
+
+	p.patchJump(elseJump)
+	p.emitByte(OP_POP)
+
+	p.parsePrecedence(PREC_OR)
+	p.patchJump(endJump)
+}
+
 func (p *Parser) string(canAssign bool) {
 	prev := p.previous
 	// copy only the string (avoid copying the quote characters)
@@ -514,6 +525,15 @@ func (p *Parser) defineVariable(global uint8) {
 		return
 	}
 	p.emitBytes(OP_DEFINE_GLOBAL, global)
+}
+
+func (p *Parser) and_(canAssign bool) {
+	endJump := p.emitJump(OP_JUMP_IF_FALSE)
+
+	p.emitByte(OP_POP)
+	p.parsePrecedence(PREC_AND)
+
+	p.patchJump(endJump)
 }
 
 func getRule(typ TokenType) ParseRule {
