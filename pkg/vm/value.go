@@ -16,6 +16,7 @@ type ObjType int
 
 const (
 	ObjString ObjType = iota
+	ObjFunction
 )
 
 type Value struct {

@@ -15,6 +15,24 @@ type Obj interface {
 	GetNext() Obj
 }
 
+type ObjectFunction struct {
+	next Obj
+
+	arity int
+	chunk *Chunk
+	name  *ObjectString
+}
+
+func (of *ObjectFunction) Type() ObjType {
+	return ObjFunction
+}
+func (of *ObjectFunction) SetNext(next Obj) {
+	of.next = next
+}
+func (of *ObjectFunction) GetNext() Obj {
+	return of.next
+}
+
 type ObjectString struct {
 	String string
 	Hash   uint32
@@ -22,6 +40,7 @@ type ObjectString struct {
 }
 
 var _ Obj = (*ObjectString)(nil)
+var _ Obj = (*ObjectFunction)(nil)
 
 func copyString(chars string) *ObjectString {
 	hash := hashString(chars)
@@ -35,6 +54,10 @@ func copyString(chars string) *ObjectString {
 	return allocateString(strings.Clone(chars), hash)
 }
 
+func printFunction(function *ObjectFunction) {
+	fmt.Printf("<fn %s>", function.name.String)
+}
+
 func takeString(s string) *ObjectString {
 	hash := hashString(s)
 	if interned := vm.Strings.FindString(s, hash); interned != nil {
@@ -46,6 +69,16 @@ func takeString(s string) *ObjectString {
 func allocateObject(obj Obj) {
 	obj.SetNext(vm.Objects)
 	vm.Objects = obj
+}
+
+func newFunction() *ObjectFunction {
+	fn := &ObjectFunction{
+		arity: 0,
+		name:  nil,
+		chunk: InitChunk(),
+	}
+	allocateObject(fn)
+	return fn
 }
 
 func allocateString(s string, hash uint32) *ObjectString {
@@ -72,6 +105,8 @@ func printObject(value Value) {
 	switch value.Obj.Type() {
 	case ObjString:
 		fmt.Print(AsGoString(value))
+	case ObjFunction:
+		printFunction(AsFunction(value))
 	}
 }
 
@@ -91,8 +126,19 @@ func (v Value) IsObject() bool {
 	return v.Type == ValObj
 }
 
+func IsFunction(v Value) bool {
+	return v.IsObject() && v.Obj.Type() == ObjFunction
+}
+
 func IsString(v Value) bool {
 	return v.IsObject() && v.Obj.Type() == ObjString
+}
+
+func AsFunction(value Value) *ObjectFunction {
+	if o, ok := value.Obj.(*ObjectFunction); ok {
+		return o
+	}
+	return nil
 }
 
 func AsString(value Value) *ObjectString {
