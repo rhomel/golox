@@ -10,20 +10,18 @@ import (
 var debugPrintCode = false
 
 var current *Compiler
-var compilingChunk *Chunk
 
 func currentChunk() *Chunk {
-	return compilingChunk
+	return current.function.chunk
 }
 
-func compile(source string, chunk *Chunk) bool {
+func compile(source string) *ObjectFunction {
 	scanner := InitScanner(source)
 	parser.scanner = scanner
 	parser.hadError = false
 	parser.panicMode = false
 	compiler := Compiler{}
-	parser.InitCompiler(&compiler)
-	compilingChunk = chunk
+	parser.InitCompiler(&compiler, TypeScript)
 
 	parser.advance()
 
@@ -31,17 +29,26 @@ func compile(source string, chunk *Chunk) bool {
 		parser.declaration()
 	}
 
-	endCompiler()
-	return !parser.hadError
+	function := endCompiler()
+	if parser.hadError {
+		return nil
+	}
+	return function
 }
 
-func endCompiler() {
+func endCompiler() *ObjectFunction {
 	parser.emitReturn()
+	function := current.function
 	if debugPrintCode {
 		if !parser.hadError {
-			currentChunk().Disassemble("code")
+			name := "<script>"
+			if function.name != nil {
+				name = function.name.String
+			}
+			currentChunk().Disassemble(name)
 		}
 	}
+	return function
 }
 
 func (p *Parser) beginScope() {
@@ -126,12 +133,22 @@ type Local struct {
 	depth int
 }
 
+type FunctionType int
+
+const (
+	TypeFunction FunctionType = iota
+	TypeScript
+)
+
 // AsString returns the local token's string from the parser source
 func (l Local) AsString(source []rune) string {
 	return l.name.StartAsString(source)
 }
 
 type Compiler struct {
+	function *ObjectFunction
+	typ      FunctionType
+
 	locals     [UINT8_COUNT]Local
 	localCount int
 	scopeDepth int
@@ -675,10 +692,20 @@ func (p *Parser) patchJump(offset int) {
 	currentChunk().Code[offset+1] = (uint8)(low)
 }
 
-func (p *Parser) InitCompiler(compiler *Compiler) {
+func (p *Parser) InitCompiler(compiler *Compiler, typ FunctionType) {
+	compiler.function = nil
+	compiler.typ = typ
 	compiler.localCount = 0
 	compiler.scopeDepth = 0
+	compiler.function = newFunction()
 	current = compiler
+
+	// the compiler claims stack slot 0
+	local := current.locals[current.localCount]
+	current.localCount++
+	local.depth = 0
+	local.name.Start = 0 // the c implementation (24.2.1) uses an empty string (may have an effect later)
+	local.name.Length = 0
 }
 
 func (p *Parser) makeConstant(value Value) uint8 {

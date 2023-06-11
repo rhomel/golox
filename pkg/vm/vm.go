@@ -10,13 +10,19 @@ var vm *VM
 var DebugTraceExecution bool = true
 
 const UINT8_COUNT = math.MaxUint8 + 1
-const STACK_MAX = 256
+const FRAMES_MAX = 64
+const STACK_MAX = FRAMES_MAX * UINT8_COUNT
+
+type CallFrame struct {
+	Function   *ObjectFunction
+	Ip         int
+	Slots      []Value // a "pointer" back to the vm.Stack
+	SlotsStart int     // relative stack index for the CallFrame's slots? maybe we don't need it if we start the Slots slice at the right stack index for the call frame
+}
 
 type VM struct {
-	Chunk *Chunk
-
-	// instead of using unsafe pointers in Go we will use an array/slice index
-	Ip int
+	Frames     [FRAMES_MAX]CallFrame
+	FrameCount int
 
 	Stack    [STACK_MAX]Value
 	StackTop int
@@ -26,14 +32,16 @@ type VM struct {
 }
 
 func resetStack() {
-	vm.StackTop = 0
+	vm.StackTop = 0 // this line does not match the book's example (24.3.3)
+	vm.FrameCount = 0
 }
 
 func runtimeError(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
-	// the book does some C pointer math here that I don't remmeber so this
-	// might not be correct.
-	line := vm.Chunk.Lines[vm.Ip]
+	// 24.3.3: different from the book because of pointer math
+	frame := vm.Frames[vm.FrameCount-1]
+	instruction := frame.Ip - 1
+	line := frame.Function.chunk.Lines[instruction]
 	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
 }
 
@@ -63,7 +71,6 @@ func concatenate() {
 
 func InitVM() {
 	vm = &VM{
-		Chunk:   InitChunk(),
 		Globals: &Table{},
 		Strings: &Table{},
 	}
@@ -86,21 +93,28 @@ const (
 )
 
 func interpret(source string) InterpretResult {
-	chunk := InitChunk()
-	if !compile(source, chunk) {
+	function := compile(source)
+	if function == nil {
 		return INTERPRET_COMPILE_ERROR
 	}
-	vm.Chunk = chunk
-	vm.Ip = 0
 
-	result := run()
-	return result
+	push(ObjVal(function))
+	frame := CallFrame{
+		Function: function,
+		Ip:       0, // (24.3.3) the book sets this to the chunk.code pointer
+		Slots:    vm.Stack[:],
+	}
+	vm.Frames[vm.FrameCount] = frame
+	vm.FrameCount++
+
+	return run()
 }
 
 func run() InterpretResult {
+	frame := vm.Frames[vm.FrameCount-1]
 	READ_BYTE := func() uint8 {
-		instruction := vm.Chunk.Code[vm.Ip]
-		vm.Ip++
+		instruction := frame.Function.chunk.Code[frame.Ip]
+		frame.Ip++
 		return instruction
 	}
 	READ_SHORT := func() uint16 {
@@ -110,7 +124,7 @@ func run() InterpretResult {
 		return short
 	}
 	READ_CONSTANT := func() Value {
-		return vm.Chunk.Constants.values[READ_BYTE()]
+		return frame.Function.chunk.Constants.values[READ_BYTE()]
 	}
 	READ_STRING := func() *ObjectString {
 		return AsString(READ_CONSTANT())
@@ -137,7 +151,10 @@ func run() InterpretResult {
 				fmt.Printf(" ]")
 			}
 			fmt.Println()
-			vm.Chunk.DisassembleInstruction(vm.Ip)
+			// (24.3.3) the book's frame ip is a pointer, so it calculates offset using
+			// pointer arithmetic. We may not have this problem because the chunk is always
+			// separate and therefore our frame ip is also for the function chunk?
+			frame.Function.chunk.DisassembleInstruction(frame.Ip)
 		}
 		var instruction uint8 = READ_BYTE()
 		switch instruction {
@@ -154,10 +171,10 @@ func run() InterpretResult {
 			pop()
 		case OP_GET_LOCAL:
 			slot := READ_BYTE()
-			push(vm.Stack[slot])
+			push(frame.Slots[slot])
 		case OP_SET_LOCAL:
 			slot := READ_BYTE()
-			vm.Stack[slot] = peek(0)
+			frame.Slots[slot] = peek(0)
 		case OP_GET_GLOBAL:
 			name := READ_STRING()
 			value := Value{}
@@ -237,15 +254,15 @@ func run() InterpretResult {
 			fmt.Println()
 		case OP_JUMP:
 			var offset uint16 = READ_SHORT()
-			vm.Ip += int(offset)
+			frame.Ip += int(offset)
 		case OP_JUMP_IF_FALSE:
 			var offset uint16 = READ_SHORT()
 			if isFalsey(peek(0)) {
-				vm.Ip += int(offset)
+				frame.Ip += int(offset)
 			}
 		case OP_LOOP:
 			var offset uint16 = READ_SHORT()
-			vm.Ip = vm.Ip - int(offset)
+			frame.Ip = frame.Ip - int(offset)
 		case OP_RETURN:
 			return INTERPRET_OK
 		default:
