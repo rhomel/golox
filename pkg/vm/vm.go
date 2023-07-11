@@ -145,7 +145,7 @@ func run() InterpretResult {
 	for {
 		if DebugTraceExecution {
 			fmt.Printf("          ")
-			for i := 0; i < vm.StackTop; i++ {
+			for i := 1; i < vm.StackTop; i++ {
 				fmt.Printf("[ ")
 				printValue(vm.Stack[i])
 				fmt.Printf(" ]")
